@@ -69,3 +69,19 @@ To modify the protocol, edit `js/hardware/serial_leds.js`.
    - Plug in your USB-RS485 adapter.
    - Click **CONNECT RS485** on the dashboard.
    - Select your device from the browser popup.
+
+## Automation & Testing
+
+A global helper `window.GeodesicHelper` is available in the browser console for automation and debugging:
+
+- `switchGame(gameId)`: Switches the active game (e.g., `'pulsewars'`, `'chain'`).
+- `triggerNode(nodeId)`: Simulates a physical interaction (button press) on a specific dome node.
+- `getGameState()`: Returns current game metadata (active state, levels, scores).
+- `getNodeScreenPositions()`: Returns screen coordinates and interaction properties (`isTarget`, `capturedBy`) for all nodes.
+
+**Example (Console):**
+```javascript
+GeodesicHelper.switchGame('pulsewars');
+const targets = GeodesicHelper.getNodeScreenPositions().filter(n => n.isTarget);
+GeodesicHelper.triggerNode(targets[0].id);
+```

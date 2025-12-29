@@ -4,45 +4,49 @@ export class ChainGame {
         this.ui = ui; // callback interface for score updates
         this.particleSystem = particleSystem;
 
-        this.round = 1;
+        this.level = 1;
         this.targetHub = null;
         this.hubsLit = 0;
 
-        // New Timing Logic
-        this.baseTimePerNode = 5.0; // Seconds to hit next node
+        // Timing Logic
+        this.baseTimePerNode = 5.0;
         this.timeRemaining = 0;
         this.timerRunning = false;
 
         this.active = false;
-        this.winCondition = 26;
+        this.winCondition = 10; // Hubs required for Level 1
 
-        this.gameState = 'IDLE'; // IDLE, PLAYING, WON, LOST
+        this.gameState = 'IDLE'; // IDLE, PLAYING, WON, LOST, COUNTDOWN
+        this.transitionTimer = 0;
+        this.countdownValue = 0;
     }
 
     start() {
         this.active = true;
+        this.level = 1;
+        this.baseTimePerNode = 5.0;
+        this.winCondition = 10;
         this.gameState = 'PLAYING';
         this.resetRound();
         this.spawnTarget();
-        this.ui.updateStatus("Chain Reaction: KEEP IT ALIVE!");
+        this.ui.updateStatus("Chain Reaction: LEVEL 1");
     }
 
     stop() {
         this.active = false;
         this.gameState = 'IDLE';
-        // Cleanup visual state
+        this.timerRunning = false;
         this.dome.nodes.forEach(n => {
             n.chainLit = false;
             n.pulseIntensity = 0;
             n.isTarget = false;
-            n.capturedBy = null; // reused for color states if needed
+            n.capturedBy = null;
             n.owner = null;
         });
     }
 
     resetRound() {
         this.hubsLit = 0;
-        this.round = 1;
         this.timerRunning = false;
         this.timeRemaining = this.baseTimePerNode;
 
@@ -56,28 +60,37 @@ export class ChainGame {
     }
 
     update(dt) {
-        if (!this.active || this.gameState !== 'PLAYING') {
-            this.handleEndGameEffects(); // Optional: continue animations
+        if (!this.active) return;
+
+        if (this.gameState === 'COUNTDOWN') {
+            this.transitionTimer -= dt;
+            if (this.transitionTimer <= 0) {
+                this.countdownValue--;
+                if (this.countdownValue > 0) {
+                    this.transitionTimer = 0.8; // 0.8s beat
+                    this.flashAllNodes(0.8, '#ffffff'); // Strong flash
+                } else {
+                    this.gameState = 'PLAYING';
+                    this.resetRound(); // Clear flash
+                    this.spawnTarget();
+                    this.ui.updateStatus(`Level ${this.level} - START!`);
+                }
+            }
             return;
         }
+
+        if (this.gameState !== 'PLAYING') return;
 
         // Timer Logic
         if (this.timerRunning) {
             this.timeRemaining -= dt;
 
-            // Urgency Flashing
             if (this.targetHub !== null) {
                 const n = this.dome.nodes[this.targetHub];
                 if (this.timeRemaining < 2.0) {
-                    // Fast flash Red/Magenta
-                    const phase = Math.sin(Date.now() / 50); // Fast pulse
-                    // Toggle color? We can't easily swap color in renderer without property
-                    // But we can modulate intensity wildly
+                    const phase = Math.sin(Date.now() / 50);
                     n.pulseIntensity = 0.5 + 0.5 * phase;
-                    // To show red urgency, maybe use 'capturedBy=1' (Red) temporarily? 
-                    // No, let's keep it simple: Just super fast pulsing.
                 } else {
-                    // Normal pulse
                     n.pulseIntensity = 0.3 + 0.4 * Math.sin(Date.now() / 200);
                 }
             }
@@ -97,73 +110,150 @@ export class ChainGame {
         this.updateUI();
     }
 
-    handleEndGameEffects() {
-        // Just keep existing particles updating in main loop
+    flashAllNodes(intensity, color) {
+        this.dome.nodes.forEach(n => {
+            n.pulseIntensity = intensity;
+            // Temporarily use capturedBy for specific color during flash if needed
+            // but white is just pulseIntensity.
+        });
+        if (this.particleSystem) {
+            // Burst from center?
+            this.particleSystem.spawn(window.innerWidth / 2, window.innerHeight / 2, color, 20);
+        }
     }
 
     onInteract(node) {
         if (!this.active || this.gameState !== 'PLAYING') return;
 
         if (node.id === this.targetHub) {
-            // Success
             if (!this.timerRunning) this.timerRunning = true;
 
-            // Visuals
             node.chainLit = true;
             node.isTarget = false;
             node.pulseIntensity = 1;
             this.hubsLit++;
 
-            // Reset Timer for next node
-            // Maybe gets slightly faster each time?
-            const speedUp = Math.min(2.0, this.hubsLit * 0.05);
-            this.timeRemaining = Math.max(1.5, this.baseTimePerNode - speedUp);
+            const speedUp = Math.min(2.0, this.hubsLit * 0.1);
+            this.timeRemaining = Math.max(1.0, this.baseTimePerNode - speedUp);
 
-            // Particles
             if (this.particleSystem) {
-                this.particleSystem.spawn(node.sx, node.sy, '#00ff9d'); // Green burst
+                this.particleSystem.spawn(node.sx, node.sy, '#00ff9d');
             }
 
             if (this.hubsLit >= this.winCondition) {
-                this.gameOver(true);
+                this.levelUp();
             } else {
                 this.spawnTarget();
             }
-        } else if (node.chainLit) {
-            // Already lit - ignore
-        } else {
-            // Miss - Penalty?
+        } else if (!node.chainLit) {
             this.timeRemaining -= 1.0;
             if (this.particleSystem) {
-                this.particleSystem.spawn(node.sx, node.sy, '#ff0055', 5); // Red puff
+                this.particleSystem.spawn(node.sx, node.sy, '#ff0055', 5);
             }
         }
+    }
+
+    levelUp() {
+        this.timerRunning = false;
+        this.gameState = 'WON'; // intermediate state
+        this.ui.showNotification(`LEVEL ${this.level} COMPLETE!`, "success");
+
+        // Win Animation: Double Shockwave
+        // 1. Expand outward (White/Bright)
+        const centerNode = this.targetHub !== null ? this.dome.nodes[this.targetHub] : this.dome.nodes[0];
+
+        this.dome.nodes.forEach(n => {
+            const dist = this.getDist(centerNode.p3, n.p3);
+
+            // Outward White Pulse (Shockwave)
+            setTimeout(() => {
+                n.pulseIntensity = 1.0; // Blooms white
+                n.chainLit = true;      // Underlying color is green
+                // Struts will light up due to node color
+            }, dist * 300); // Faster ripple
+
+            // Secondary Glitter
+            setTimeout(() => {
+                if (Math.random() > 0.6) n.pulseIntensity = 0.8;
+            }, dist * 300 + 200);
+        });
+
+        // Delay next level start
+        setTimeout(() => this.startCountdown(), 3000);
+    }
+
+    startCountdown() {
+        // Hard Reset: Turn everything OFF first
+        this.dome.nodes.forEach(n => {
+            n.chainLit = false;
+            n.pulseIntensity = 0;
+            n.isTarget = false;
+            n.capturedBy = null;
+        });
+
+        this.gameState = 'COUNTDOWN';
+        this.countdownValue = 3;
+        this.transitionTimer = 0.8; // Slower cadence for 3-2-1
+
+        this.level++;
+        this.winCondition += 5;
+        this.baseTimePerNode = Math.max(2.5, this.baseTimePerNode - 0.5);
+
+        this.ui.updateStatus(`Level ${this.level} Ready...`);
     }
 
     spawnTarget() {
         const candidates = this.dome.nodes.filter(n => !n.chainLit);
         if (candidates.length === 0) return;
 
-        const idx = Math.floor(Math.random() * candidates.length);
-        const newTargetId = candidates[idx].id;
+        let selectedNode;
+        if (this.targetHub !== null) {
+            const currentPos = this.dome.nodes[this.targetHub].p3;
+            // Dynamic difficulty: favor distant nodes based on level
+            // Weight = distance ^ (0.5 + level * 0.2)
+            const power = 0.5 + this.level * 0.3;
+
+            let totalWeight = 0;
+            const weightedCandidates = candidates.map(n => {
+                const d = this.getDist(currentPos, n.p3);
+                const weight = Math.pow(d, power);
+                totalWeight += weight;
+                return { node: n, weight };
+            });
+
+            let r = Math.random() * totalWeight;
+            for (const cand of weightedCandidates) {
+                r -= cand.weight;
+                if (r <= 0) {
+                    selectedNode = cand.node;
+                    break;
+                }
+            }
+        }
+
+        if (!selectedNode) selectedNode = candidates[Math.floor(Math.random() * candidates.length)];
 
         // Tracer
         if (this.targetHub !== null && this.particleSystem) {
-            const path = this.dome.findPath(this.targetHub, newTargetId);
+            const path = this.dome.findPath(this.targetHub, selectedNode.id);
             if (path) {
                 this.particleSystem.spawnPathTracer(path, '#ff00ff');
             }
         }
 
-        this.targetHub = newTargetId;
+        this.targetHub = selectedNode.id;
         this.dome.nodes[this.targetHub].isTarget = true;
+    }
+
+    getDist(a, b) {
+        return Math.sqrt(Math.pow(a[0] - b[0], 2) + Math.pow(a[1] - b[1], 2) + Math.pow(a[2] - b[2], 2));
     }
 
     updateUI() {
         if (this.ui) {
             this.ui.updateScore({
                 p1: this.hubsLit,
-                label: "Hubs",
+                label: `Lvl ${this.level} - Hubs`,
                 timer: this.timerRunning ? this.timeRemaining.toFixed(1) : "--"
             });
         }
@@ -173,42 +263,23 @@ export class ChainGame {
         this.timerRunning = false;
         this.targetHub = null;
 
-        if (win) {
-            this.gameState = 'WON';
-            this.ui.showNotification("SYSTEM SECURTITY RESTORED!", "success");
-
-            // Win Animation: Green Ripple / Explosion on all nodes
-            this.dome.nodes.forEach((n, i) => {
-                setTimeout(() => {
-                    n.pulseIntensity = 1;
-                    n.chainLit = true; // Stay green
-                    if (Math.random() > 0.7 && this.particleSystem) {
-                        this.particleSystem.spawnExplosion(n.sx, n.sy, '#00ff9d');
-                    }
-                }, i * 20);
-            });
-
-            setTimeout(() => this.start(), 4000);
-
-        } else {
+        if (!win) {
             this.gameState = 'LOST';
             this.ui.showNotification("CRITICAL FAILURE", "error");
 
-            // Loss Animation: Red Flash then Fade
             this.dome.nodes.forEach(n => {
                 n.isTarget = false;
                 n.chainLit = false;
-                n.capturedBy = 1; // Hack: Turn red using 'PulseWars' color slot
+                n.capturedBy = 1;
                 n.pulseIntensity = 1;
             });
 
             setTimeout(() => {
-                // Fade out redness
                 this.dome.nodes.forEach(n => {
                     n.capturedBy = null;
                     n.pulseIntensity = 0;
                 });
-                this.start();
+                this.start(); // Restart at Level 1
             }, 3000);
         }
     }

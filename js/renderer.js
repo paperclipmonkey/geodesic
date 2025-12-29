@@ -134,7 +134,7 @@ export class Renderer {
         this.ctx.fillRect(0, 0, this.width, this.height);
 
         if (this.autoRotate) {
-            this.rx += 0.002;
+            this.rx += 0.004;
         }
 
         // Update Projections
@@ -153,14 +153,52 @@ export class Renderer {
 
             // Gradient stroke
             const grad = this.ctx.createLinearGradient(nA.sx, nA.sy, nB.sx, nB.sy);
-            grad.addColorStop(0, this.getNodeColor(nA, 0.4)); // Increased visibility
-            grad.addColorStop(1, this.getNodeColor(nB, 0.4));
+
+            // Check for charged strut (Edge property)
+            if (e.chargeRatio > 0 && e.chargeColor) {
+                // Fill from A to B (or B to A? We need direction)
+                // Assuming 'chargeFrom' is set on edge to know direction, or just generic fill
+                // For simplified visuals, let's assume A->B fill for now or gradients
+                // Actually, gradients are absolute. 
+                // If we want to animate "filling", we need to know which node is "source".
+                // Let's assume the game sets 'chargeSource' on the edge to 'nA' or 'nB' ID.
+
+                const isFromA = e.chargeSource === nA.id;
+                const ratio = isFromA ? e.chargeRatio : (1 - e.chargeRatio);
+
+                // Base color
+                const cA = this.getNodeColor(nA, 0.4);
+                const cB = this.getNodeColor(nB, 0.4);
+
+                if (isFromA) {
+                    grad.addColorStop(0, e.chargeColor);
+                    grad.addColorStop(ratio, e.chargeColor);
+                    grad.addColorStop(ratio + 0.01, cB); // Hard transition
+                    grad.addColorStop(1, cB);
+                } else {
+                    grad.addColorStop(0, cA);
+                    grad.addColorStop(ratio - 0.01, cA);
+                    grad.addColorStop(ratio, e.chargeColor);
+                    grad.addColorStop(1, e.chargeColor);
+                }
+
+                this.ctx.lineWidth = 3; // Thicker for active strut
+                this.ctx.shadowBlur = 10;
+                this.ctx.shadowColor = e.chargeColor;
+
+            } else {
+                grad.addColorStop(0, this.getNodeColor(nA, 0.4));
+                grad.addColorStop(1, this.getNodeColor(nB, 0.4));
+                this.ctx.lineWidth = 1.5;
+                this.ctx.shadowBlur = 0;
+            }
 
             this.ctx.strokeStyle = grad;
             this.ctx.beginPath();
             this.ctx.moveTo(nA.sx, nA.sy);
             this.ctx.lineTo(nB.sx, nB.sy);
             this.ctx.stroke();
+            this.ctx.shadowBlur = 0;
         }
 
         // Draw Nodes
@@ -206,16 +244,15 @@ export class Renderer {
     }
 
     getNodeColor(n, alpha = 1) {
-        if (n.isTarget) return `rgba(255, 0, 255, ${alpha})`; // Magenta for Target (First priority)
-
-        if (n.pulseIntensity > 0) {
-            return `rgba(255, 255, 255, ${alpha})`;
-        }
         if (n.capturedBy === 1) return `rgba(255, 0, 85, ${alpha})`; // Red
         if (n.capturedBy === 2) return `rgba(59, 130, 246, ${alpha})`; // Blue
         if (n.owner === 1) return `rgba(255, 0, 85, ${alpha})`;
         if (n.owner === 2) return `rgba(59, 130, 246, ${alpha})`;
         if (n.chainLit) return `rgba(0, 255, 157, ${alpha})`; // Green for chain
+
+        if (n.pulseIntensity > 0) {
+            return `rgba(255, 255, 255, ${alpha})`;
+        }
 
         return `rgba(30, 36, 51, ${alpha})`; // Default grey
     }

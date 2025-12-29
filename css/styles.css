@@ -51,6 +51,50 @@ body {
   flex-direction: column;
   z-index: 10;
   box-shadow: 4px 0 24px rgba(0, 0, 0, 0.4);
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), min-width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+#panel.collapsed {
+  width: 0;
+  min-width: 0;
+  border: none;
+}
+
+.icon-btn {
+  background: none;
+  border: 1px solid var(--panel-border);
+  color: var(--text-muted);
+  border-radius: 4px;
+  cursor: pointer;
+  padding: 4px 8px;
+  margin-left: auto;
+}
+
+.icon-btn:hover {
+  color: var(--text);
+  border-color: var(--text);
+}
+
+.floating-expand {
+  position: absolute;
+  top: 24px;
+  left: 24px;
+  z-index: 20;
+  background: rgba(10, 13, 18, 0.8);
+  backdrop-filter: blur(4px);
+  padding: 8px 12px;
+  display: none;
+}
+
+#panel.collapsed+#canvas-container .floating-expand,
+/* If using sibling selector, but button is before panel? Wait, logic check. */
+/* Actually button is before panel in DOM, need JS to toggle class or move button. 
+   Let's check HTML structure again. Button is sibling of Panel. 
+   Wait, floating expand needs to be visible when panel is collapsed. 
+   Let's just use JS to show/hide it. */
+.floating-expand.visible {
+  display: block;
 }
 
 #canvas-container {
@@ -97,6 +141,7 @@ canvas {
   font-weight: 700;
   letter-spacing: -0.5px;
   background: linear-gradient(to right, #fff, #94a3b8);
+  background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }

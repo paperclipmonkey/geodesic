@@ -96,16 +96,70 @@ async function init() {
     toggleBtn.addEventListener('click', () => {
         renderer.autoRotateEnabled = !renderer.autoRotateEnabled;
         renderer.autoRotate = renderer.autoRotateEnabled;
+        toggleBtn.classList.toggle('active', renderer.autoRotateEnabled);
+    });
 
-        if (renderer.autoRotateEnabled) {
-            toggleBtn.classList.add('active');
-        } else {
-            toggleBtn.classList.remove('active');
-        }
+    // Sidebar Collapse
+    const panel = document.getElementById('panel');
+    const btnCollapse = document.getElementById('btn-collapse');
+    const btnExpand = document.getElementById('btn-expand');
+
+    btnCollapse.addEventListener('click', () => {
+        panel.classList.add('collapsed');
+        btnExpand.classList.add('visible');
+        setTimeout(() => renderer.resize(), 350); // Trigger canvas resize
+    });
+
+    btnExpand.addEventListener('click', () => {
+        panel.classList.remove('collapsed');
+        btnExpand.classList.remove('visible');
+        setTimeout(() => renderer.resize(), 350);
     });
 
     // Start Default
     engine.start('chain');
+
+    // Automation Helpers
+    window.GeodesicHelper = {
+        getGameState: () => {
+            const game = engine.currentGame;
+            return {
+                name: engine.activeGameId,
+                active: game ? game.active : false,
+                level: game ? game.level : 0,
+                score: game ? game.hubsLit || (game.redIndex + "-" + game.blueIndex) : 0
+            };
+        },
+        getNodeScreenPositions: () => {
+            return renderer.dome.nodes.map(n => ({
+                id: n.id,
+                x: Math.round(n.sx),
+                y: Math.round(n.sy),
+                isTarget: n.isTarget, // Helpful to find what to click
+                color: n.capturedBy // Helpful for team checks
+            }));
+        },
+        triggerNode: (nodeId) => {
+            const node = dome.nodes.find(n => n.id === nodeId);
+            if (node && engine.currentGame) {
+                console.log(`[Automation] Triggering interaction on Node ${nodeId}`);
+                engine.currentGame.onInteract(node);
+                return true;
+            }
+            console.warn(`[Automation] Node ${nodeId} not found or game not active`);
+            return false;
+        },
+        switchGame: (gameId) => {
+            console.log(`[Automation] Switching to game: ${gameId}`);
+            engine.switchGame(gameId);
+            // Update UI card active state
+            document.querySelectorAll('.game-card').forEach(c => {
+                if (c.dataset.game === gameId) c.classList.add('active');
+                else c.classList.remove('active');
+            });
+            return true;
+        }
+    };
 }
 
 window.addEventListener('DOMContentLoaded', init);
