@@ -161,7 +161,7 @@ export class Renderer {
             const radius = 6 * (n.scale / 100);
 
             // Glow
-            if (n.pulseIntensity > 0 || n.capturedBy || n.owner) {
+            if (n.pulseIntensity > 0 || n.capturedBy || n.owner || n.isTarget) {
                 this.ctx.shadowBlur = 15;
                 this.ctx.shadowColor = this.getNodeColor(n, 1);
             } else {
@@ -199,6 +199,8 @@ export class Renderer {
     }
 
     getNodeColor(n, alpha = 1) {
+        if (n.isTarget) return `rgba(255, 0, 255, ${alpha})`; // Magenta for Target (First priority)
+
         if (n.pulseIntensity > 0) {
             return `rgba(255, 255, 255, ${alpha})`;
         }
@@ -206,7 +208,6 @@ export class Renderer {
         if (n.capturedBy === 2) return `rgba(59, 130, 246, ${alpha})`; // Blue
         if (n.owner === 1) return `rgba(255, 0, 85, ${alpha})`;
         if (n.owner === 2) return `rgba(59, 130, 246, ${alpha})`;
-        if (n.isTarget) return `rgba(255, 0, 255, ${alpha})`; // Magenta for Target
         if (n.chainLit) return `rgba(0, 255, 157, ${alpha})`; // Green for chain
 
         return `rgba(30, 36, 51, ${alpha})`; // Default grey

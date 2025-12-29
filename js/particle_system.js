@@ -43,7 +43,7 @@ export class ParticleSystem {
             path: path,
             pathIndex: 0,
             progress: 0, // 0 to 1 along current segment
-            speed: 0.2, // validation speed
+            speed: 0.05, // slower validation speed
             color,
             x: path[0].sx,
             y: path[0].sy,
