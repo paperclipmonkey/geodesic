@@ -16,6 +16,7 @@ export class Renderer {
         this.ry = 0.5; // Rotation Y (slightly tilted)
 
         this.autoRotate = false;
+        this.zoom = 1.0;
 
         this.setupResize();
         this.setupInput();
@@ -25,6 +26,13 @@ export class Renderer {
         let isDragging = false;
         let lastX = 0;
         let lastY = 0;
+
+        // Zoom
+        this.canvas.addEventListener('wheel', e => {
+            e.preventDefault();
+            this.zoom += e.deltaY * -0.001;
+            this.zoom = Math.min(Math.max(0.5, this.zoom), 3.0);
+        }, { passive: false });
 
         this.canvas.addEventListener('mousedown', e => {
             isDragging = true;
@@ -101,7 +109,7 @@ export class Renderer {
         let z2 = y * s + z1 * c;
 
         // Perspective
-        const scale = 300 / (4 - z2);
+        const scale = (300 * this.zoom) / (4 - z2);
         const cx = this.width / 2;
         const cy = this.height / 2;
 
@@ -198,6 +206,7 @@ export class Renderer {
         if (n.capturedBy === 2) return `rgba(59, 130, 246, ${alpha})`; // Blue
         if (n.owner === 1) return `rgba(255, 0, 85, ${alpha})`;
         if (n.owner === 2) return `rgba(59, 130, 246, ${alpha})`;
+        if (n.isTarget) return `rgba(255, 189, 0, ${alpha})`; // Gold for Target
         if (n.chainLit) return `rgba(0, 255, 157, ${alpha})`; // Green for chain
 
         return `rgba(30, 36, 51, ${alpha})`; // Default grey

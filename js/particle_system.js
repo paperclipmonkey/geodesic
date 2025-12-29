@@ -18,6 +18,24 @@ export class ParticleSystem {
         }
     }
 
+    spawnTracer(x1, y1, x2, y2, color) {
+        const dx = x2 - x1;
+        const dy = y2 - y1;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const steps = 30; // frames to travel
+
+        this.particles.push({
+            x: x1, y: y1,
+            vx: dx / steps,
+            vy: dy / steps,
+            life: 1,
+            lifeDecay: 1 / steps,
+            color,
+            size: 4,
+            isTracer: true
+        });
+    }
+
     update() {
         for (let i = this.particles.length - 1; i >= 0; i--) {
             const p = this.particles[i];

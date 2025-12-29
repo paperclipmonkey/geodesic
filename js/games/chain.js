@@ -28,6 +28,7 @@ export class ChainGame {
         this.dome.nodes.forEach(n => {
             n.chainLit = false;
             n.pulseIntensity = 0;
+            n.isTarget = false;
         });
     }
 
@@ -41,6 +42,7 @@ export class ChainGame {
         this.dome.nodes.forEach(n => {
             n.chainLit = false;
             n.pulseIntensity = 0;
+            n.isTarget = false;
         });
 
         this.updateUI();
@@ -71,6 +73,7 @@ export class ChainGame {
             if (!this.timerRunning) this.timerRunning = true;
 
             node.chainLit = true;
+            node.isTarget = false;
             node.pulseIntensity = 1;
             this.hubsLit++;
 
@@ -101,11 +104,20 @@ export class ChainGame {
         if (candidates.length === 0) return;
 
         const idx = Math.floor(Math.random() * candidates.length);
-        this.targetHub = candidates[idx].id;
+        const newTargetId = candidates[idx].id;
 
-        // Visual cue handled by renderer checking (if n.id == targetHub then pulse?)
-        // For now, let's keep it simple: The renderer needs to know who the target is.
-        // Or we Pulse it continuously in update()
+        // Handle tracer from old target
+        if (this.targetHub !== null && this.particleSystem) {
+            const oldNode = this.dome.nodes[this.targetHub];
+            const newNode = this.dome.nodes[newTargetId];
+            // Spawn tracer from old to new
+            // Note: nodes might have default sx/sy if not yet rendered? 
+            // But usually they are updated 60fps.
+            this.particleSystem.spawnTracer(oldNode.sx, oldNode.sy, newNode.sx, newNode.sy, '#ffbd00');
+        }
+
+        this.targetHub = newTargetId;
+        this.dome.nodes[this.targetHub].isTarget = true;
     }
 
     // We need to inject the target visual into the node so renderer sees it
@@ -121,10 +133,10 @@ export class ChainGame {
         }
 
         // Pulse target
+        // Pulse target for extra effect (optional, or rely on gold color)
         if (this.targetHub !== null) {
             const n = this.dome.nodes[this.targetHub];
-            // Sine wave pulse
-            n.pulseIntensity = 0.5 + 0.5 * Math.sin(Date.now() / 200);
+            n.pulseIntensity = 0.3 + 0.3 * Math.sin(Date.now() / 200);
         }
     }
 
