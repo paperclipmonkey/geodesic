@@ -1,20 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <title>Geodesic Dome OS</title>
-  
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
-  
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap"
+    rel="stylesheet">
+
   <link rel="stylesheet" href="css/styles.css">
 </head>
 
 <body>
   <div id="app-container">
-    
+
     <!-- Control Panel -->
     <div id="panel">
       <div class="panel-header">
@@ -23,7 +26,7 @@
       </div>
 
       <div class="scroll-content">
-        
+
         <!-- Dashboard -->
         <div class="dashboard">
           <div class="section-label">LIVE TELELOGS</div>
@@ -48,7 +51,7 @@
                 <span class="game-desc">Precision Target Training</span>
               </div>
             </div>
-            
+
             <div class="game-card" data-game="resonance">
               <span class="game-icon">🌊</span>
               <div class="game-info">
@@ -56,7 +59,7 @@
                 <span class="game-desc">Wave Propagation Test</span>
               </div>
             </div>
-            
+
             <div class="game-card" data-game="pulsewars">
               <span class="game-icon">⚔️</span>
               <div class="game-info">
@@ -75,9 +78,9 @@
               <span class="setting-label">Auto-Rotate View</span>
               <div class="switch" id="toggle-rotate"></div>
             </div>
-            
+
             <button class="btn btn-primary" id="btn-connect">CONNECT RS485</button>
-            <button class="btn btn-secondary">CALIBRATE NODES</button>
+            <button class="btn btn-secondary" id="btn-calibrate">CALIBRATE NODES</button>
           </div>
         </div>
 
@@ -92,12 +95,12 @@
     <!-- Viewport -->
     <div id="canvas-container">
       <div id="notification-area"></div>
-      
+
       <div id="connection-status">
         <div class="status-dot"></div>
         <span>HARDWARE LINK</span>
       </div>
-      
+
       <canvas id="canvas"></canvas>
     </div>
 
@@ -105,4 +108,5 @@
 
   <script type="module" src="js/main.js"></script>
 </body>
+
 </html>

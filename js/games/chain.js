@@ -1,7 +1,8 @@
 export class ChainGame {
-    constructor(dome, ui) {
+    constructor(dome, ui, particleSystem) {
         this.dome = dome;
         this.ui = ui; // callback interface for score updates
+        this.particleSystem = particleSystem;
 
         this.round = 1;
         this.targetHub = null;
@@ -72,6 +73,10 @@ export class ChainGame {
             node.chainLit = true;
             node.pulseIntensity = 1;
             this.hubsLit++;
+
+            if (this.particleSystem) {
+                this.particleSystem.spawn(node.sx, node.sy, '#00ff9d');
+            }
 
             // Audio
             // playSuccess(); // We will need to inject audio context or use event

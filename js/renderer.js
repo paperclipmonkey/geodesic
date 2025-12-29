@@ -4,10 +4,11 @@
  */
 
 export class Renderer {
-    constructor(canvas, dome) {
+    constructor(canvas, dome, particleSystem) {
         this.canvas = canvas;
         this.ctx = canvas.getContext("2d", { alpha: false });
         this.dome = dome;
+        this.particleSystem = particleSystem;
 
         this.width = 0;
         this.height = 0;
@@ -17,6 +18,56 @@ export class Renderer {
         this.autoRotate = false;
 
         this.setupResize();
+        this.setupInput();
+    }
+
+    setupInput() {
+        let isDragging = false;
+        let lastX = 0;
+        let lastY = 0;
+
+        this.canvas.addEventListener('mousedown', e => {
+            isDragging = true;
+            lastX = e.clientX;
+            lastY = e.clientY;
+        });
+
+        window.addEventListener('mousemove', e => {
+            if (!isDragging) return;
+            const dx = e.clientX - lastX;
+            const dy = e.clientY - lastY;
+
+            this.ry -= dx * 0.01;
+            this.rx -= dy * 0.01;
+
+            lastX = e.clientX;
+            lastY = e.clientY;
+
+            // Disable auto rotate on interaction
+            this.autoRotate = false;
+        });
+
+        window.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+
+        // Touch support for rotation
+        this.canvas.addEventListener('touchstart', e => {
+            const t = e.touches[0];
+            lastX = t.clientX;
+            lastY = t.clientY;
+        }, { passive: true });
+
+        this.canvas.addEventListener('touchmove', e => {
+            const t = e.touches[0];
+            const dx = t.clientX - lastX;
+            const dy = t.clientY - lastY;
+            this.ry -= dx * 0.01;
+            this.rx -= dy * 0.01;
+            lastX = t.clientX;
+            lastY = t.clientY;
+            this.autoRotate = false;
+        }, { passive: true });
     }
 
     setupResize() {
@@ -127,8 +178,8 @@ export class Renderer {
         }
 
         // Draw Particles
-        if (particles) {
-            for (const p of particles) {
+        if (this.particleSystem) {
+            for (const p of this.particleSystem.particles) {
                 this.ctx.fillStyle = p.color;
                 this.ctx.globalAlpha = p.life;
                 this.ctx.beginPath();

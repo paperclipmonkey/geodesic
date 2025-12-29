@@ -3,16 +3,17 @@ import { ResonanceGame } from './games/resonance.js';
 import { PulseWarsGame } from './games/pulse_wars.js';
 
 export class GameEngine {
-    constructor(dome, renderer, hardware, ui) {
+    constructor(dome, renderer, hardware, ui, particleSystem) {
         this.dome = dome;
         this.renderer = renderer;
         this.hardware = hardware;
         this.ui = ui;
+        this.particleSystem = particleSystem;
 
         this.games = {
-            chain: new ChainGame(dome, ui),
-            resonance: new ResonanceGame(dome, ui),
-            pulsewars: new PulseWarsGame(dome, ui)
+            chain: new ChainGame(dome, ui, particleSystem),
+            resonance: new ResonanceGame(dome, ui, particleSystem),
+            pulsewars: new PulseWarsGame(dome, ui, particleSystem)
         };
 
         this.currentGame = null;
@@ -75,6 +76,7 @@ export class GameEngine {
         }
 
         // Render Visuals
+        if (this.particleSystem) this.particleSystem.update();
         this.renderer.draw();
 
         // Update Hardware

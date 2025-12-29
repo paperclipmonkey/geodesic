@@ -216,6 +216,11 @@ canvas {
   font-size: 16px;
   color: var(--accent-primary);
   font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
+  text-align: right;
 }
 
 .team-red {

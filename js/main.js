@@ -2,6 +2,7 @@ import { Dome } from './dome.js';
 import { Renderer } from './renderer.js';
 import { SerialLEDs } from './hardware/serial_leds.js';
 import { GameEngine } from './game_engine.js';
+import { ParticleSystem } from './particle_system.js';
 
 // UI Helper
 const UI = {
@@ -39,10 +40,11 @@ async function init() {
 
     const canvas = document.getElementById('canvas');
     const dome = new Dome();
-    const renderer = new Renderer(canvas, dome);
+    const particleSystem = new ParticleSystem();
+    const renderer = new Renderer(canvas, dome, particleSystem);
     const hardware = new SerialLEDs();
 
-    const engine = new GameEngine(dome, renderer, hardware, UI);
+    const engine = new GameEngine(dome, renderer, hardware, UI, particleSystem);
 
     // Bind UI Controls
     document.querySelectorAll('.game-card').forEach(card => {
@@ -54,6 +56,16 @@ async function init() {
             const game = card.dataset.game;
             engine.switchGame(game);
         });
+    });
+
+    document.getElementById('btn-calibrate').addEventListener('click', () => {
+        UI.showNotification("Calibrating...", "info");
+        // Blink all nodes white
+        dome.nodes.forEach(n => { n.pulseIntensity = 1; n.owner = null; n.capturedBy = null; });
+        setTimeout(() => {
+            dome.nodes.forEach(n => n.pulseIntensity = 0);
+            UI.showNotification("Calibration Complete", "success");
+        }, 1000);
     });
 
     const connectBtn = document.getElementById('btn-connect');
