@@ -16,6 +16,7 @@ export class Renderer {
         this.ry = 0.5; // Rotation Y
 
         this.autoRotate = true;
+        this.autoRotateEnabled = true; // User preference
         this.zoom = 1.3;
 
         this.setupResize();
@@ -57,7 +58,7 @@ export class Renderer {
 
         window.addEventListener('mouseup', () => {
             isDragging = false;
-            this.autoRotate = true;
+            if (this.autoRotateEnabled) this.autoRotate = true;
         });
 
         // Touch support for rotation
@@ -80,7 +81,7 @@ export class Renderer {
         }, { passive: true });
 
         this.canvas.addEventListener('touchend', () => {
-            this.autoRotate = true;
+            if (this.autoRotateEnabled) this.autoRotate = true;
         });
     }
 

@@ -89,8 +89,19 @@ async function init() {
         }
     });
 
-    document.getElementById('toggle-rotate').addEventListener('click', () => {
-        renderer.autoRotate = !renderer.autoRotate;
+    const toggleBtn = document.getElementById('toggle-rotate');
+    // Set initial state
+    if (renderer.autoRotateEnabled) toggleBtn.classList.add('active');
+
+    toggleBtn.addEventListener('click', () => {
+        renderer.autoRotateEnabled = !renderer.autoRotateEnabled;
+        renderer.autoRotate = renderer.autoRotateEnabled;
+
+        if (renderer.autoRotateEnabled) {
+            toggleBtn.classList.add('active');
+        } else {
+            toggleBtn.classList.remove('active');
+        }
     });
 
     // Start Default
