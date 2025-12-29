@@ -86,21 +86,21 @@ export class Renderer {
     }
 
     setupResize() {
-        const resize = () => {
-            const rect = this.canvas.getBoundingClientRect();
-            const dpr = window.devicePixelRatio || 1;
+        window.addEventListener('resize', () => this.resize());
+        this.resize();
+    }
 
-            this.width = rect.width;
-            this.height = rect.height;
+    resize() {
+        const rect = this.canvas.getBoundingClientRect();
+        const dpr = window.devicePixelRatio || 1;
 
-            this.canvas.width = this.width * dpr;
-            this.canvas.height = this.height * dpr;
+        this.width = rect.width;
+        this.height = rect.height;
 
-            this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-        };
+        this.canvas.width = this.width * dpr;
+        this.canvas.height = this.height * dpr;
 
-        window.addEventListener('resize', resize);
-        resize();
+        this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     }
 
     project(p) {
