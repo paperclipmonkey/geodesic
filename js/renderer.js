@@ -15,8 +15,8 @@ export class Renderer {
         this.rx = 0.2; // Rotation X (Flatter view)
         this.ry = 0.5; // Rotation Y
 
-        this.autoRotate = true;
-        this.autoRotateEnabled = true; // User preference
+        this.autoRotate = false;
+        this.autoRotateEnabled = false; // User preference
         this.zoom = 1.3;
 
         this.setupResize();
@@ -153,8 +153,8 @@ export class Renderer {
 
             // Gradient stroke
             const grad = this.ctx.createLinearGradient(nA.sx, nA.sy, nB.sx, nB.sy);
-            grad.addColorStop(0, this.getNodeColor(nA, 0.2));
-            grad.addColorStop(1, this.getNodeColor(nB, 0.2));
+            grad.addColorStop(0, this.getNodeColor(nA, 0.4)); // Increased visibility
+            grad.addColorStop(1, this.getNodeColor(nB, 0.4));
 
             this.ctx.strokeStyle = grad;
             this.ctx.beginPath();
