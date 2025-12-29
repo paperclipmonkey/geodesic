@@ -206,7 +206,7 @@ export class Renderer {
         if (n.capturedBy === 2) return `rgba(59, 130, 246, ${alpha})`; // Blue
         if (n.owner === 1) return `rgba(255, 0, 85, ${alpha})`;
         if (n.owner === 2) return `rgba(59, 130, 246, ${alpha})`;
-        if (n.isTarget) return `rgba(255, 189, 0, ${alpha})`; // Gold for Target
+        if (n.isTarget) return `rgba(255, 0, 255, ${alpha})`; // Magenta for Target
         if (n.chainLit) return `rgba(0, 255, 157, ${alpha})`; // Green for chain
 
         return `rgba(30, 36, 51, ${alpha})`; // Default grey

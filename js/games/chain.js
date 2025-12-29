@@ -107,13 +107,13 @@ export class ChainGame {
         const newTargetId = candidates[idx].id;
 
         // Handle tracer from old target
+        // Handle tracer from old target
         if (this.targetHub !== null && this.particleSystem) {
-            const oldNode = this.dome.nodes[this.targetHub];
-            const newNode = this.dome.nodes[newTargetId];
-            // Spawn tracer from old to new
-            // Note: nodes might have default sx/sy if not yet rendered? 
-            // But usually they are updated 60fps.
-            this.particleSystem.spawnTracer(oldNode.sx, oldNode.sy, newNode.sx, newNode.sy, '#ffbd00');
+            // Find path using Dome BFS
+            const path = this.dome.findPath(this.targetHub, newTargetId);
+            if (path) {
+                this.particleSystem.spawnPathTracer(path, '#ff00ff');
+            }
         }
 
         this.targetHub = newTargetId;
