@@ -1,31 +1,71 @@
-# Geodesic Dome LED Game Simulator
+# Geodesic Dome OS v2.0
 
-A 3D interactive geodesic dome visualization and game engine built with vanilla JavaScript and HTML5 Canvas.
+A modular interactive geodesic dome visualization, game engine, and hardware controller.
 
 ![Geodesic Dome UI](screenshot.png)
 
+## Overview
+
+This project simulates a 2V Geodesic Dome with LED-lit hubs. It is designed to act as the **Control System** for a physical 5-meter dome installation, sending data via WebSerial/RS485 to embedded controllers.
+
 ## Features
 
-- **Interactive 3D Dome**: Drag to rotate the structure and explore the LED nodes.
-- **Three Game Modes**:
-  - **⚡ Chain Reaction**: Hit glowing targets to light up hubs and maintain combos.
-  - **🌊 Resonance**: Create waves of color that flow across the dome; collide them for points.
-  - **⚔️ Pulse Wars**: A competitive territory control game between Red and Blue teams.
-- **Dynamic Visuals**:
-  - Bloom/Glow effects
-  - Particle systems
-  - Smooth animations and transitions
-- **Audio System**: Interactive sound effects for gameplay actions.
+- **Interactive 3D Simulation**: Drag, zoom, and interact with the dome on screen.
+- **Modular Game Engine**: Flexible architecture to add new light games easily.
+- **Hardware Integration**: Built-in WebSerial driver to control physical LED hubs via RS485.
+- **Premium Dashboard**: A dark-mode, touch-friendly interface for field operators.
+
+### Game Modes
+
+- **⚡ Chain Reaction**: Hit glowing targets to light up hubs and maintain combos.
+- **🌊 Resonance**: Create waves of color that flow across the dome surface.
+- **⚔️ Pulse Wars**: A competitive territory control game (Red vs Blue).
+
+## Technical Architecture
+
+The project is structured as a modular ES6 application:
+
+```
+/
+├── index.html          # Entry point and UI layout
+├── css/
+│   └── styles.css      # Premium UI styles
+└── js/
+    ├── main.js         # Application bootstrapper
+    ├── dome.js         # Geometry generation and state
+    ├── renderer.js     # HTML5 Canvas 3D visualization
+    ├── game_engine.js  # Main loop and logic
+    ├── games/          # Individual game logic modules
+    └── hardware/
+        ├── led_interface.js  # Abstract base class
+        └── serial_leds.js    # WebSerial RS485 implementation
+```
+
+## Physical Dome Setup
+
+### Hardware Requirements
+- **Hubs**: Custom LED hubs (e.g., ESP32 or RS485-addr nodes).
+- **Communication**: USB-to-RS485 adapter connected to the host computer.
+- **Topology**: Daemon chain or star topology depending on RS485 termination.
+
+### WebSerial Protocol
+The `SerialLEDs` module sends binary frames to the RS485 bus.
+**Default Config**: `115200 baud, 8N1`
+
+#### Frame Structure (Draft)
+A simple frame is sent every update loop (60Hz or limited):
+`[START(0xAA), R1, G1, B1, R2, G2, B2, ..., END(0x55)]`
+
+To modify the protocol, edit `js/hardware/serial_leds.js`.
 
 ## Getting Started
 
-No build process or installation is required!
-
-1. Clone the repository.
-2. Open `index.html` in any modern web browser.
-3. Enjoy!
-
-## Controls
-
-- **Mouse/Touch**: Drag to rotate the dome. Click on hubs to interact.
-- **UI Panel**: Switch game modes, toggle sound/rotation, and view stats.
+1. **Serve the directory**: Due to ES6 Modules, you must run a local HTTP server.
+   ```bash
+   python3 -m http.server 8000
+   ```
+2. **Open the App**: Navigate to `http://localhost:8000`.
+3. **Connect Hardware**:
+   - Plug in your USB-RS485 adapter.
+   - Click **CONNECT RS485** on the dashboard.
+   - Select your device from the browser popup.
