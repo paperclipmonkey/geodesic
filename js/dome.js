@@ -90,19 +90,63 @@ export class Dome {
   }
 
   build() {
-    const t = (1 + Math.sqrt(5)) / 2;
-    const baseVerts = [
-      [-1, t, 0], [1, t, 0], [-1, -t, 0], [1, -t, 0],
-      [0, -1, t], [0, 1, t], [0, -1, -t], [0, 1, -t],
-      [t, 0, -1], [t, 0, 1], [-t, 0, -1], [-t, 0, 1]
-    ].map(v => this.vecNorm(v));
+    // Vertex-Zenith Aligned Icosahedron logic
+    // This alignment ensures that we have a ring of vertices at Z=0 (after subdivision)
+    // capable of forming a flat base for the hemisphere.
 
-    const faces = [
-      [0, 11, 5], [0, 5, 1], [0, 1, 7], [0, 7, 10], [0, 10, 11],
-      [1, 5, 9], [5, 11, 4], [11, 10, 2], [10, 7, 6], [7, 1, 8],
-      [3, 9, 4], [3, 4, 2], [3, 2, 6], [3, 6, 8], [3, 8, 9],
-      [4, 9, 5], [2, 4, 11], [6, 2, 10], [8, 6, 7], [9, 8, 1]
-    ];
+    const sqrt5 = Math.sqrt(5);
+    const zRing = 1 / sqrt5;
+    const rRing = 2 / sqrt5;
+    const PI = Math.PI;
+
+    const baseVerts = [];
+
+    // 0: Top Vertex
+    baseVerts.push([0, 0, 1]);
+
+    // 1-5: Ring A (Upper Ring)
+    for (let i = 0; i < 5; i++) {
+      const theta = (72 * i) * (PI / 180);
+      baseVerts.push([rRing * Math.cos(theta), rRing * Math.sin(theta), zRing]);
+    }
+
+    // 6-10: Ring B (Lower Ring)
+    // Offset by 36 degrees
+    for (let i = 0; i < 5; i++) {
+      const theta = (72 * i + 36) * (PI / 180);
+      baseVerts.push([rRing * Math.cos(theta), rRing * Math.sin(theta), -zRing]);
+    }
+
+    // 11: Bottom Vertex
+    baseVerts.push([0, 0, -1]);
+
+    // Faces
+    const faces = [];
+
+    // Top Cap
+    for (let i = 1; i <= 5; i++) {
+      const next = (i % 5) + 1;
+      faces.push([0, i, next]);
+    }
+
+    // Mid Band
+    for (let i = 0; i < 5; i++) {
+      const a1 = i + 1;
+      const a2 = ((i + 1) % 5) + 1;
+      const b1 = i + 6;
+      const b2 = ((i + 1) % 5) + 6;
+
+      // Two triangles per segment
+      faces.push([a1, b1, a2]);
+      faces.push([b1, b2, a2]);
+    }
+
+    // Bottom Cap (needed for complete math, though we cut it later)
+    for (let i = 0; i < 5; i++) {
+      const b1 = i + 6;
+      const b2 = ((i + 1) % 5) + 6;
+      faces.push([11, b2, b1]);
+    }
 
     faces.forEach(f => {
       const v0 = baseVerts[f[0]];
