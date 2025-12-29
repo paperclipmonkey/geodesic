@@ -55,8 +55,33 @@ async function init() {
 
             const game = card.dataset.game;
             engine.switchGame(game);
+
+            // Manual Controls Visibility
+            const manualControls = document.getElementById('manual-controls');
+            if (game === 'manual') {
+                manualControls.style.display = 'block';
+            } else {
+                manualControls.style.display = 'none';
+            }
         });
     });
+
+    // Manual Mode Bindings
+    const manualColor = document.getElementById('manual-color');
+    const manualIntensity = document.getElementById('manual-intensity');
+
+    const updateManual = () => {
+        const game = engine.games.manual;
+        const hex = manualColor.value;
+        const r = parseInt(hex.slice(1, 3), 16);
+        const g = parseInt(hex.slice(3, 5), 16);
+        const b = parseInt(hex.slice(5, 7), 16);
+        game.setColor(r, g, b);
+        game.setIntensity(parseFloat(manualIntensity.value));
+    };
+
+    manualColor.addEventListener('input', updateManual);
+    manualIntensity.addEventListener('input', updateManual);
 
     document.getElementById('btn-calibrate').addEventListener('click', () => {
         UI.showNotification("Calibrating...", "info");

@@ -52,7 +52,8 @@ export class Dome {
         // Pulse Wars Specific
         capturedBy: null, // 1=Red, 2=Blue
         chargeTeam: null,
-        ringCharge: 0     // 0 to 12
+        ringCharge: 0,    // 0 to 12
+        color: null       // Custom color override
       };
       this.nodes.push(node);
       this.vertMap.set(key, id);
@@ -76,8 +77,9 @@ export class Dome {
       leds: new Uint8Array(this.ledsPerEdge).fill(0), // Brightness/Color packed? simplified to brightness for now or index
       // For simulation, we might store color per LED later. 
       // For now, let's keep the existing logic: edges light up as a whole or gradients.
-      // To support full addressability, we'll imagine each edge has 'LEDS_PER_EDGE' pixels.
-      pixelData: new Float32Array(this.ledsPerEdge * 3) // RGB per pixel
+      pixelData: new Float32Array(this.ledsPerEdge * 3), // RGB per pixel
+      color: null,         // Custom color override for the whole edge
+      intensity: 0         // For "breathing" effect or manual intensity
     });
 
     // Update Adjacency

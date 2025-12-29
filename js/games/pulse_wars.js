@@ -71,6 +71,8 @@ export class PulseWarsGame {
         this.dome.edges.forEach(e => {
             e.chargeRatio = 0;
             e.chargeColor = null;
+            e.color = null;     // Clear persistent color
+            e.intensity = 0;    // Clear intensity
         });
     }
 
@@ -162,8 +164,8 @@ export class PulseWarsGame {
             // But for visuals let's reset the fill so they can fill the NEXT one.
             if (edge) {
                 edge.chargeRatio = 0; // Reset for next
-                // Maybe permanently color it? Renderer doesn't support owner on edges yet.
-                // We'll leave it simple.
+                edge.color = color;   // Keep it lit permanently for this game
+                edge.intensity = 1.0;
             }
 
             // Check Win (Lap Condition: Reached OTHER start)
@@ -251,5 +253,24 @@ export class PulseWarsGame {
 
             i++;
         }, 50);
+
+        // Flash EVERYTHING at end
+        setTimeout(() => {
+            clearInterval(interval); // ensuring
+            this.dome.nodes.forEach(n => {
+                n.capturedBy = team;
+                n.pulseIntensity = 1;
+            });
+            this.dome.edges.forEach(e => {
+                e.color = color;
+                e.intensity = 1.0;
+            });
+        }, 1500); // Trigger flash earlier? User said "flash the winning colour".
+
+        // After flash, reset
+        setTimeout(() => {
+            this.stop(); // Ensure full cleanup
+            this.start(); // Restart
+        }, 4000);
     }
 }

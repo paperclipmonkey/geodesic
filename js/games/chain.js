@@ -82,20 +82,25 @@ export class ChainGame {
         if (this.gameState !== 'PLAYING') return;
 
         // Timer Logic
-        if (this.timerRunning) {
-            this.timeRemaining -= dt;
+        if (this.timerRunning || this.hubsLit === 0) { // Keep pulsing even if timer hasn't started for first node
+            if (this.timerRunning) this.timeRemaining -= dt;
 
             if (this.targetHub !== null) {
                 const n = this.dome.nodes[this.targetHub];
-                if (this.timeRemaining < 2.0) {
-                    const phase = Math.sin(Date.now() / 50);
-                    n.pulseIntensity = 0.5 + 0.5 * phase;
-                } else {
-                    n.pulseIntensity = 0.3 + 0.4 * Math.sin(Date.now() / 200);
-                }
+
+                // Adaptive Blink Speed
+                // Slower when lots of time, very fast when < 2s
+                let blinkSpeed = 200; // Base speed divisor
+
+                if (this.timeRemaining < 2.0) blinkSpeed = 50;
+                else if (this.timeRemaining < 5.0) blinkSpeed = 100;
+
+                // Ensure it's always visible (0.2 to 1.0)
+                n.pulseIntensity = 0.2 + 0.8 * Math.sin(Date.now() / blinkSpeed);
+                n.isTarget = true; // Force logic
             }
 
-            if (this.timeRemaining <= 0) {
+            if (this.timerRunning && this.timeRemaining <= 0) {
                 this.gameOver(false);
             }
         }
@@ -267,20 +272,38 @@ export class ChainGame {
             this.gameState = 'LOST';
             this.ui.showNotification("CRITICAL FAILURE", "error");
 
+            // Red Pulse Animation (3 seconds)
             this.dome.nodes.forEach(n => {
                 n.isTarget = false;
                 n.chainLit = false;
-                n.capturedBy = 1;
-                n.pulseIntensity = 1;
+                n.capturedBy = 1; // Red
             });
 
-            setTimeout(() => {
-                this.dome.nodes.forEach(n => {
-                    n.capturedBy = null;
-                    n.pulseIntensity = 0;
-                });
-                this.start(); // Restart at Level 1
-            }, 3000);
+            // Pulse loop
+            const startTime = Date.now();
+            const animateFail = () => {
+                if (this.gameState !== 'LOST') return;
+
+                const now = Date.now();
+                const elapsed = now - startTime;
+
+                if (elapsed >= 3000) {
+                    // Reset and Restart
+                    this.dome.nodes.forEach(n => {
+                        n.capturedBy = null;
+                        n.pulseIntensity = 0;
+                    });
+                    this.start(); // Restart at Level 1, which cleans up and spawns target
+                    return;
+                }
+
+                // Sin wave pulse
+                const pulse = 0.5 + 0.5 * Math.sin(elapsed / 150);
+                this.dome.nodes.forEach(n => n.pulseIntensity = pulse);
+                requestAnimationFrame(animateFail);
+            };
+
+            animateFail();
         }
     }
 }

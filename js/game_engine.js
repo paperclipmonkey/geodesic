@@ -1,6 +1,10 @@
 import { ChainGame } from './games/chain.js';
 import { ResonanceGame } from './games/resonance.js';
 import { PulseWarsGame } from './games/pulse_wars.js';
+import { SnakeGame } from './games/snake.js';
+import { BreathingGame } from './games/breathing.js';
+import { ManualGame } from './games/manual.js';
+import { ValidationGame } from './games/validation.js';
 
 export class GameEngine {
     constructor(dome, renderer, hardware, ui, particleSystem) {
@@ -13,7 +17,11 @@ export class GameEngine {
         this.games = {
             chain: new ChainGame(dome, ui, particleSystem),
             resonance: new ResonanceGame(dome, ui, particleSystem),
-            pulsewars: new PulseWarsGame(dome, ui, particleSystem)
+            pulsewars: new PulseWarsGame(dome, ui, particleSystem),
+            snake: new SnakeGame(dome, ui, particleSystem),
+            breathing: new BreathingGame(dome, ui, particleSystem),
+            manual: new ManualGame(dome, ui, particleSystem),
+            validation: new ValidationGame(dome, ui, particleSystem)
         };
 
         this.currentGame = null;

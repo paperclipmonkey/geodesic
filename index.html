@@ -69,6 +69,38 @@
                 <span class="game-desc">Territory Control Protocol</span>
               </div>
             </div>
+
+            <div class="game-card" data-game="snake">
+              <span class="game-icon">🐍</span>
+              <div class="game-info">
+                <span class="game-name">Snake</span>
+                <span class="game-desc">Strut-based growth animation</span>
+              </div>
+            </div>
+
+            <div class="game-card" data-game="breathing">
+              <span class="game-icon">🫁</span>
+              <div class="game-info">
+                <span class="game-name">Breathing</span>
+                <span class="game-desc">Whole dome pulse animation</span>
+              </div>
+            </div>
+
+            <div class="game-card" data-game="manual">
+              <span class="game-icon">🎛️</span>
+              <div class="game-info">
+                <span class="game-name">Manual Mode</span>
+                <span class="game-desc">Direct color & intensity</span>
+              </div>
+            </div>
+
+            <div class="game-card" data-game="validation">
+              <span class="game-icon">🛠️</span>
+              <div class="game-info">
+                <span class="game-name">Validation</span>
+                <span class="game-desc">System diagnostic mode</span>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -83,6 +115,21 @@
 
             <button class="btn btn-primary" id="btn-connect">CONNECT RS485</button>
             <button class="btn btn-secondary" id="btn-calibrate">CALIBRATE NODES</button>
+          </div>
+        </div>
+
+        <!-- Manual Controls (Conditional) -->
+        <div id="manual-controls" style="display: none;">
+          <div class="section-label">MANUAL SETTINGS</div>
+          <div class="control-group">
+            <div class="setting-row">
+              <span class="setting-label">Color</span>
+              <input type="color" id="manual-color" value="#ffffff">
+            </div>
+            <div class="setting-row">
+              <span class="setting-label">Intensity</span>
+              <input type="range" id="manual-intensity" min="0" max="1" step="0.01" value="0.5">
+            </div>
           </div>
         </div>
 

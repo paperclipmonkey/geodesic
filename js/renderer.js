@@ -146,13 +146,25 @@ export class Renderer {
         }
 
         // Draw Edges
-        this.ctx.lineWidth = 1.5;
+        this.ctx.lineWidth = 3.0; // Increased base width for visibility
         for (const e of this.dome.edges) {
             const nA = this.dome.nodes[e.a];
             const nB = this.dome.nodes[e.b];
 
+            // Calculate Edge Style
+            let edgeColor = e.color;
+            let edgeOpacity = 0.6; // Increased base opacity
+            let lineWidth = 3.0;   // Thicker default
+
             // Gradient stroke
             const grad = this.ctx.createLinearGradient(nA.sx, nA.sy, nB.sx, nB.sy);
+
+            // Check for custom edge color
+            if (e.color) {
+                edgeColor = e.color;
+                edgeOpacity = (e.intensity !== undefined) ? e.intensity : 1.0;
+                lineWidth = 4.0; // Even thicker for active
+            }
 
             // Check for charged strut (Edge property)
             if (e.chargeRatio > 0 && e.chargeColor) {
@@ -182,22 +194,29 @@ export class Renderer {
                     grad.addColorStop(1, e.chargeColor);
                 }
 
-                this.ctx.lineWidth = 3; // Thicker for active strut
+                this.ctx.lineWidth = 5; // Thicker for active strut
                 this.ctx.shadowBlur = 10;
                 this.ctx.shadowColor = e.chargeColor;
 
             } else {
-                grad.addColorStop(0, this.getNodeColor(nA, 0.4));
-                grad.addColorStop(1, this.getNodeColor(nB, 0.4));
-                this.ctx.lineWidth = 1.5;
+                if (e.color) {
+                    grad.addColorStop(0, edgeColor);
+                    grad.addColorStop(1, edgeColor);
+                } else {
+                    grad.addColorStop(0, this.getNodeColor(nA, edgeOpacity));
+                    grad.addColorStop(1, this.getNodeColor(nB, edgeOpacity));
+                }
+                this.ctx.lineWidth = lineWidth;
                 this.ctx.shadowBlur = 0;
             }
 
+            this.ctx.globalAlpha = edgeOpacity;
             this.ctx.strokeStyle = grad;
             this.ctx.beginPath();
             this.ctx.moveTo(nA.sx, nA.sy);
             this.ctx.lineTo(nB.sx, nB.sy);
             this.ctx.stroke();
+            this.ctx.globalAlpha = 1.0;
             this.ctx.shadowBlur = 0;
         }
 
@@ -244,17 +263,37 @@ export class Renderer {
     }
 
     getNodeColor(n, alpha = 1) {
-        if (n.capturedBy === 1) return `rgba(255, 0, 85, ${alpha})`; // Red
-        if (n.capturedBy === 2) return `rgba(59, 130, 246, ${alpha})`; // Blue
-        if (n.owner === 1) return `rgba(255, 0, 85, ${alpha})`;
-        if (n.owner === 2) return `rgba(59, 130, 246, ${alpha})`;
-        if (n.chainLit) return `rgba(0, 255, 157, ${alpha})`; // Green for chain
+        let color = n.color;
 
-        if (n.pulseIntensity > 0) {
-            return `rgba(255, 255, 255, ${alpha})`;
+        // Default if no color set
+        if (!color) {
+            if (n.capturedBy === 1) color = 'rgb(255, 0, 85)';
+            else if (n.capturedBy === 2) color = 'rgb(59, 130, 246)';
+            else if (n.owner === 1) color = 'rgb(255, 0, 85)';
+            else if (n.owner === 2) color = 'rgb(59, 130, 246)';
+            else if (n.chainLit) color = 'rgb(0, 255, 157)';
+            else if (n.pulseIntensity > 0) return `rgba(255, 255, 255, ${alpha})`;
+            else return `rgba(30, 36, 51, ${alpha})`;
         }
 
-        return `rgba(30, 36, 51, ${alpha})`; // Default grey
+        // Handle alpha injection
+        if (alpha !== 1) {
+            if (color.startsWith('rgb(')) {
+                return color.replace('rgb', 'rgba').replace(')', `, ${alpha})`);
+            } else if (color.startsWith('hsl(')) {
+                // Convert hsl(h, s%, l%) to hsla(h, s%, l%, alpha)
+                // Or just use new CSS syntax if supported, but safer to replace.
+                return color.replace('hsl', 'hsla').replace(')', `, ${alpha})`);
+            } else if (color.startsWith('#')) {
+                // Hex to rgba? Or just use hex if alpha is 1.
+                // For simplicity, if it's hex and we need alpha, we might need a helper, 
+                // but let's assume we stick to rgb/hsl for dynamic stuff.
+                // If it is hex, we can't easily add alpha without parsing.
+                // Let's assume hex is opaque.
+            }
+        }
+
+        return color;
     }
 
     // Interaction
