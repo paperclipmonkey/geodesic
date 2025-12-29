@@ -16,7 +16,7 @@ export class Renderer {
         this.ry = 0.5; // Rotation Y (slightly tilted)
 
         this.autoRotate = false;
-        this.zoom = 1.0;
+        this.zoom = 1.3;
 
         this.setupResize();
         this.setupInput();
@@ -30,7 +30,7 @@ export class Renderer {
         // Zoom
         this.canvas.addEventListener('wheel', e => {
             e.preventDefault();
-            this.zoom += e.deltaY * -0.001;
+            this.zoom += e.deltaY * -0.002;
             this.zoom = Math.min(Math.max(0.5, this.zoom), 3.0);
         }, { passive: false });
 
