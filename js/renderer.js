@@ -12,10 +12,10 @@ export class Renderer {
 
         this.width = 0;
         this.height = 0;
-        this.rx = 0.5; // Rotation X
-        this.ry = 0.5; // Rotation Y (slightly tilted)
+        this.rx = 0.2; // Rotation X (Flatter view)
+        this.ry = 0.5; // Rotation Y
 
-        this.autoRotate = false;
+        this.autoRotate = true;
         this.zoom = 1.3;
 
         this.setupResize();
@@ -57,6 +57,7 @@ export class Renderer {
 
         window.addEventListener('mouseup', () => {
             isDragging = false;
+            this.autoRotate = true;
         });
 
         // Touch support for rotation
@@ -74,8 +75,13 @@ export class Renderer {
             this.rx -= dy * 0.01;
             lastX = t.clientX;
             lastY = t.clientY;
+            lastY = t.clientY;
             this.autoRotate = false;
         }, { passive: true });
+
+        this.canvas.addEventListener('touchend', () => {
+            this.autoRotate = true;
+        });
     }
 
     setupResize() {
