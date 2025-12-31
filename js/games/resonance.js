@@ -235,7 +235,7 @@ export class ResonanceGame {
             owner: 0
         });
 
-        if (this.soundManager) this.soundManager.playRipple(1.0);
+        if (this.soundManager) this.soundManager.playRipple(hue);
 
         this.ui.updateStatus(`Resonance: Wave Spawned (${Math.floor(hue * 360)}°)`);
     }

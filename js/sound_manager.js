@@ -122,13 +122,16 @@ export class SoundManager {
     }
 
     // Resonance
-    playRipple(strength) {
+    playRipple(pitch = 0.5) {
         // Water drop effect
         const t = this.ctx.currentTime;
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
 
-        osc.frequency.setValueAtTime(400 + strength * 200, t);
+        // 200Hz to 800Hz range
+        const startFreq = 200 + pitch * 600;
+
+        osc.frequency.setValueAtTime(startFreq, t);
         osc.frequency.exponentialRampToValueAtTime(100, t + 0.3);
 
         gain.gain.setValueAtTime(0, t);
