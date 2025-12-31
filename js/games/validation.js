@@ -1,7 +1,9 @@
 export class ValidationGame {
-    constructor(dome, ui) {
+    constructor(dome, ui, particleSystem, soundManager) {
         this.dome = dome;
         this.ui = ui;
+        this.particleSystem = particleSystem;
+        this.soundManager = soundManager;
         this.active = false;
     }
 
@@ -29,6 +31,7 @@ export class ValidationGame {
         node.color = 'rgb(255, 255, 255)';
         node.pulseIntensity = 1.0;
         node.isTagged = true; // Use a custom flag to keep it lit
+        if (this.soundManager) this.soundManager.playSound('click');
 
         // Find edges connected to this node
         this.dome.edges.forEach(e => {

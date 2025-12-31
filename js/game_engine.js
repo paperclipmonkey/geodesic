@@ -7,21 +7,22 @@ import { ManualGame } from './games/manual.js';
 import { ValidationGame } from './games/validation.js';
 
 export class GameEngine {
-    constructor(dome, renderer, hardware, ui, particleSystem) {
+    constructor(dome, renderer, hardware, ui, particleSystem, soundManager) {
         this.dome = dome;
         this.renderer = renderer;
         this.hardware = hardware;
         this.ui = ui;
         this.particleSystem = particleSystem;
+        this.soundManager = soundManager;
 
         this.games = {
-            chain: new ChainGame(dome, ui, particleSystem),
-            resonance: new ResonanceGame(dome, ui, particleSystem),
-            pulsewars: new PulseWarsGame(dome, ui, particleSystem),
-            snake: new SnakeGame(dome, ui, particleSystem),
-            breathing: new BreathingGame(dome, ui, particleSystem),
-            manual: new ManualGame(dome, ui, particleSystem),
-            validation: new ValidationGame(dome, ui, particleSystem)
+            chain: new ChainGame(dome, ui, particleSystem, soundManager),
+            resonance: new ResonanceGame(dome, ui, particleSystem, soundManager),
+            pulsewars: new PulseWarsGame(dome, ui, particleSystem, soundManager),
+            snake: new SnakeGame(dome, ui, particleSystem, soundManager),
+            breathing: new BreathingGame(dome, ui, particleSystem, soundManager),
+            manual: new ManualGame(dome, ui, particleSystem, soundManager),
+            validation: new ValidationGame(dome, ui, particleSystem, soundManager)
         };
 
         this.currentGame = null;

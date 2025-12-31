@@ -1,8 +1,9 @@
 export class ChainGame {
-    constructor(dome, ui, particleSystem) {
+    constructor(dome, ui, particleSystem, soundManager) {
         this.dome = dome;
         this.ui = ui; // callback interface for score updates
         this.particleSystem = particleSystem;
+        this.soundManager = soundManager;
 
         this.level = 1;
         this.targetHub = null;
@@ -30,6 +31,7 @@ export class ChainGame {
         this.resetRound();
         this.spawnTarget();
         this.ui.updateStatus("Chain Reaction: LEVEL 1");
+        if (this.soundManager) this.soundManager.playSound('start');
     }
 
     stop() {
@@ -73,6 +75,7 @@ export class ChainGame {
                 if (this.countdownValue > 0) {
                     this.transitionTimer = 0.8; // 0.8s beat
                     this.flashAllNodes(0.8, '#ffffff'); // Strong flash
+                    if (this.soundManager) this.soundManager.playSound('tick');
                 } else {
                     this.gameState = 'PLAYING';
                     this.resetRound(); // Clear flash
@@ -160,6 +163,7 @@ export class ChainGame {
             if (this.particleSystem) {
                 this.particleSystem.spawn(node.sx, node.sy, '#00ff9d');
             }
+            if (this.soundManager) this.soundManager.playChainNode(this.hubsLit);
 
             if (this.hubsLit >= this.winCondition) {
                 this.levelUp();
@@ -171,6 +175,7 @@ export class ChainGame {
             if (this.particleSystem) {
                 this.particleSystem.spawn(node.sx, node.sy, '#ff0055', 5);
             }
+            if (this.soundManager) this.soundManager.playSound('fail');
         }
     }
 
@@ -178,6 +183,7 @@ export class ChainGame {
         this.timerRunning = false;
         this.gameState = 'WON'; // intermediate state
         this.ui.showNotification(`LEVEL ${this.level} COMPLETE!`, "success");
+        if (this.soundManager) this.soundManager.playSound('success');
 
         // Win Animation: Double Shockwave
         // 1. Expand outward (White/Bright)
@@ -266,6 +272,7 @@ export class ChainGame {
         const targetNode = this.dome.nodes[this.targetHub];
         targetNode.isTarget = true;
         targetNode.capturedBy = 2; // Blue Target
+        if (this.soundManager) this.soundManager.playChainTargetSpawn();
     }
 
     getDist(a, b) {
@@ -289,6 +296,7 @@ export class ChainGame {
         if (!win) {
             this.gameState = 'LOST';
             this.ui.showNotification("CRITICAL FAILURE", "error");
+            if (this.soundManager) this.soundManager.playSound('fail');
 
             // Red Pulse Animation (3 seconds)
             this.dome.nodes.forEach(n => {

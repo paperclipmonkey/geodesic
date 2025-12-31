@@ -1,5 +1,6 @@
-import { Dome } from './dome.js?v=9';
-import { Renderer } from './renderer.js?v=9';
+import { Dome } from './dome.js?v=10';
+import { Renderer } from './renderer.js?v=10';
+import { SoundManager } from './sound_manager.js';
 import { SerialLEDs } from './hardware/serial_leds.js';
 import { GameEngine } from './game_engine.js';
 import { ParticleSystem } from './particle_system.js';
@@ -43,8 +44,19 @@ async function init() {
     const particleSystem = new ParticleSystem(dome);
     const renderer = new Renderer(canvas, dome, particleSystem);
     const hardware = new SerialLEDs();
+    const soundManager = new SoundManager();
 
-    const engine = new GameEngine(dome, renderer, hardware, UI, particleSystem);
+    const engine = new GameEngine(dome, renderer, hardware, UI, particleSystem, soundManager);
+
+    // Resume Audio Context on first interaction
+    const unlockAudio = () => {
+        soundManager.resume();
+        document.removeEventListener('click', unlockAudio);
+        document.removeEventListener('touchstart', unlockAudio);
+    };
+    document.addEventListener('click', unlockAudio);
+    document.addEventListener('touchstart', unlockAudio);
+
 
     // Bind UI Controls
     document.querySelectorAll('.game-card').forEach(card => {

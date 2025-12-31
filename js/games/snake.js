@@ -1,9 +1,10 @@
 
 export class SnakeGame {
-    constructor(dome, ui, particleSystem) {
+    constructor(dome, ui, particleSystem, soundManager) {
         this.dome = dome;
         this.ui = ui;
         this.particleSystem = particleSystem;
+        this.soundManager = soundManager;
         this.active = false;
 
         // Snake State
@@ -143,6 +144,7 @@ export class SnakeGame {
 
         // Visual Feedback: Pulse the node white briefly
         node.pulseIntensity = 1.0;
+        if (this.soundManager) this.soundManager.playSound('click');
 
         // Also light up the start of the newly selected edge
         const nextNodeId = neighbors[currentIdx];
@@ -202,6 +204,7 @@ export class SnakeGame {
     consumeReward() {
         this.score++;
         this.ui.updateScore({ label: "Score", p1: this.score });
+        if (this.soundManager) this.soundManager.playSound('success');
 
         // Grow by 1/3rd of a strut (approx 0.5m)
         this.targetLength += 0.5; // Meters
@@ -456,6 +459,7 @@ export class SnakeGame {
         if (!this.isFlashing) {
             this.isFlashing = true;
             this.flashTimer = 0.5; // Flash for 500ms
+            if (this.soundManager) this.soundManager.playSound('fail');
         }
     }
 }

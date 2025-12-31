@@ -1,7 +1,9 @@
 export class BreathingGame {
-    constructor(dome, ui) {
+    constructor(dome, ui, particleSystem, soundManager) {
         this.dome = dome;
         this.ui = ui;
+        this.particleSystem = particleSystem;
+        this.soundManager = soundManager;
         this.active = false;
         this.time = 0;
         this.color = 'rgb(255, 255, 255)';
@@ -98,5 +100,6 @@ export class BreathingGame {
             'rgb(255, 170, 0)'
         ];
         this.color = colors[Math.floor(Math.random() * colors.length)];
+        if (this.soundManager) this.soundManager.playTone(440, 'sine', 1.0, 0.3);
     }
 }

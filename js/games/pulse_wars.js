@@ -1,10 +1,11 @@
 
 
 export class PulseWarsGame {
-    constructor(dome, ui, particleSystem) {
+    constructor(dome, ui, particleSystem, soundManager) {
         this.dome = dome;
         this.ui = ui;
         this.particleSystem = particleSystem;
+        this.soundManager = soundManager;
 
         this.active = false;
 
@@ -133,6 +134,11 @@ export class PulseWarsGame {
         // Increment charge
         this.charges[team]++;
 
+        if (this.soundManager) {
+            const freq = 200 + this.charges[team] * 100;
+            this.soundManager.playTone(freq, 'triangle', 0.1, 0.2);
+        }
+
         // Visuals
         const color = team === 1 ? '#ff0055' : '#3b82f6';
         if (this.particleSystem) {
@@ -154,6 +160,8 @@ export class PulseWarsGame {
 
             // Capture next node
             this.charges[team] = 0;
+
+            if (this.soundManager) this.soundManager.playSound('ping');
 
             // Advance Index
             if (team === 1) this.redIndex = nextIndex;
@@ -218,6 +226,7 @@ export class PulseWarsGame {
 
     gameOver(team) {
         this.winTeam = team;
+        if (this.soundManager) this.soundManager.playSound('success');
         const winnerName = team === 1 ? "RED" : "BLUE";
         const color = team === 1 ? '#ff0055' : '#3b82f6';
 

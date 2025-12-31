@@ -1,7 +1,9 @@
 export class ResonanceGame {
-    constructor(dome, ui) {
+    constructor(dome, ui, particleSystem, soundManager) {
         this.dome = dome;
         this.ui = ui;
+        this.particleSystem = particleSystem;
+        this.soundManager = soundManager;
         this.active = false;
         this.waves = [];
         this.score = 0;
@@ -232,6 +234,8 @@ export class ResonanceGame {
             color: col,
             owner: 0
         });
+
+        if (this.soundManager) this.soundManager.playRipple(1.0);
 
         this.ui.updateStatus(`Resonance: Wave Spawned (${Math.floor(hue * 360)}°)`);
     }
