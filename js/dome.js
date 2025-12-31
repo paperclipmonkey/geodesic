@@ -53,6 +53,9 @@ export class Dome {
         owner: null,
         pulseIntensity: 0,
 
+        // Hub LEDs (Ring of 12)
+        leds: new Uint8Array(12 * 3).fill(0),
+
         // Pulse Wars Specific
         capturedBy: null, // 1=Red, 2=Blue
         chargeTeam: null,
@@ -254,5 +257,9 @@ export class Dome {
       curr = parent.get(curr);
     }
     return path;
+  }
+
+  getEdge(aId, bId) {
+    return this.edges.find(e => (e.a === aId && e.b === bId) || (e.a === bId && e.b === aId));
   }
 }

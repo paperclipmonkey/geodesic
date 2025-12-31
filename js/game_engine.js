@@ -60,9 +60,42 @@ export class GameEngine {
         if (this.currentGame) {
             this.currentGame.stop();
         }
+
+        // Full Dome Reset
+        this.resetDome();
+
         this.currentGame = this.games[name];
         if (this.currentGame) {
             this.currentGame.start();
+        }
+    }
+
+    resetDome() {
+        this.dome.nodes.forEach(n => {
+            n.pulseIntensity = 0;
+            n.color = null;
+            n.capturedBy = null;
+            n.owner = null;
+            n.ringCharge = 0;
+            n.chargeTeam = null;
+            n.chainLit = false;
+            n.isTarget = false;
+            // Clear LED Ring
+            if (n.leds) n.leds.fill(0);
+        });
+
+        this.dome.edges.forEach(e => {
+            e.intensity = 0;
+            e.color = null;
+            e.capturedBy = null;
+            e.chargeRatio = 0;
+            // Clear Strut LEDs
+            if (e.pixelData) e.pixelData.fill(0);
+        });
+
+        // Clear particles
+        if (this.particleSystem) {
+            this.particleSystem.particles = [];
         }
     }
 

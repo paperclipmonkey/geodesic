@@ -311,34 +311,108 @@ export class Renderer {
             }
         }
 
-        // Draw Nodes
+        // Draw Nodes (Hubs as Rings of 12 LEDs)
         for (const n of this.dome.nodes) {
-            // Reduced size by 40% (from 6 to 3.6 base) to reflect physical hubs better
-            const radius = 3.6 * (n.scale / 100);
+            const scale = n.scale / 100;
+            const hubRadius = 5.0 * scale;  // 50% smaller (was 10.0)
+            const ledRadius = 0.5 * scale;  // Scaled down led
 
-            // Glow
-            if (n.pulseIntensity > 0 || n.capturedBy || n.owner || n.isTarget) {
-                this.ctx.shadowBlur = 15;
-                this.ctx.shadowColor = this.getNodeColor(n, 1);
-            } else {
-                this.ctx.shadowBlur = 0;
-            }
-
-            this.ctx.fillStyle = this.getNodeColor(n, 1);
+            // Draw Physical Hub Structure (Lighter Center)
+            this.ctx.fillStyle = '#333'; // Lighter than #111
             this.ctx.beginPath();
-            this.ctx.arc(n.sx, n.sy, Math.max(1.5, radius), 0, Math.PI * 2);
+            this.ctx.arc(n.sx, n.sy, hubRadius, 0, Math.PI * 2);
             this.ctx.fill();
-            this.ctx.shadowBlur = 0;
 
-            // Ring Charge (Pulse Wars)
-            if (n.ringCharge > 0) {
-                const pct = n.ringCharge / 12; // 12 LEDs
-                this.ctx.strokeStyle = '#fff';
-                this.ctx.lineWidth = 2;
-                this.ctx.beginPath();
-                this.ctx.arc(n.sx, n.sy, Math.max(4, radius + 3), 0, Math.PI * 2 * pct);
-                this.ctx.stroke();
+            // Prepare Colors
+            // Check if we have specific LED data
+            let useLedArray = false;
+            for (let i = 0; i < 12 * 3; i++) {
+                if (n.leds[i] > 0) { useLedArray = true; break; }
             }
+
+            // Draw 12 LEDs (Inside the Hub)
+            const ringRadius = hubRadius * 0.75; // Move LEDs inside
+            for (let i = 0; i < 12; i++) {
+                const angle = (i / 12) * Math.PI * 2 - Math.PI / 2; // Start top (-90deg)
+                const lx = n.sx + Math.cos(angle) * ringRadius;
+                const ly = n.sy + Math.sin(angle) * ringRadius;
+
+                let r = 20, g = 20, b = 25; // Base OFF color (dim gray-blue)
+
+                if (useLedArray) {
+                    const idx = i * 3;
+                    r = n.leds[idx];
+                    g = n.leds[idx + 1];
+                    b = n.leds[idx + 2];
+                } else {
+                    // Fallback Logic
+                    let active = false;
+                    let colorStr = null;
+
+                    // 1. Ring Charge (Pulse Wars)
+                    if (n.ringCharge > 0 && i < n.ringCharge) {
+                        active = true;
+                        if (n.chargeTeam === 1) { r = 255; g = 0; b = 85; }
+                        else if (n.chargeTeam === 2) { r = 59; g = 130; b = 246; }
+                        else { r = 255; g = 255; b = 255; }
+                    }
+                    // 2. Generic State (Capture, Owner, Pulse, Manual Color)
+                    else if (n.capturedBy || n.owner || n.pulseIntensity > 0 || n.color) {
+                        // Use helper to resolve complex state priorities
+                        const c = this.getNodeColor(n, 1); // Get full opacity color
+                        // Parse RGB/RGBA
+                        // Expected format: 'rgb(r, g, b)' or 'rgba(r, g, b, a)'
+                        const match = c.match(/\d+/g);
+                        if (match && match.length >= 3) {
+                            r = parseInt(match[0]);
+                            g = parseInt(match[1]);
+                            b = parseInt(match[2]);
+
+                            // If pulse intensity is used, modulate brightness if color was just white?
+                            // Actually getNodeColor returns the color. If it handles intensity correctly, we are good.
+                            // But getNodeColor usually returns static color. 
+                            // If n.pulseIntensity > 0 and n.color is NOT set, getNodeColor returns white.
+                            // If n.color IS set, getNodeColor returns n.color. 
+
+                            // Scale brightness by pulseIntensity if present
+                            if (n.pulseIntensity > 0) {
+                                let intensity = Math.min(1, n.pulseIntensity);
+
+                                if (!n.color && !n.capturedBy && !n.owner) {
+                                    // No color source = White Pulse
+                                    const val = Math.floor(255 * intensity);
+                                    r = val; g = val; b = val;
+                                } else {
+                                    // Colored Pulse (scale RGB)
+                                    // But don't make it too dark if it's just a "highlight"
+                                    // Actually, for "breathing", strictly scaling is good.
+                                    r = Math.floor(r * intensity);
+                                    g = Math.floor(g * intensity);
+                                    b = Math.floor(b * intensity);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Check active
+                const isActive = (r > 30 || g > 30 || b > 30);
+
+                this.ctx.fillStyle = `rgb(${r},${g},${b})`;
+
+                // Glow if active
+                if (isActive) {
+                    this.ctx.shadowBlur = 3 * scale;
+                    this.ctx.shadowColor = this.ctx.fillStyle;
+                } else {
+                    this.ctx.shadowBlur = 0;
+                }
+
+                this.ctx.beginPath();
+                this.ctx.arc(lx, ly, ledRadius, 0, Math.PI * 2);
+                this.ctx.fill();
+            }
+            this.ctx.shadowBlur = 0;
         }
 
         // Draw Particles
@@ -361,6 +435,7 @@ export class Renderer {
         if (!color) {
             if (n.capturedBy === 1) color = 'rgb(255, 0, 85)';
             else if (n.capturedBy === 2) color = 'rgb(59, 130, 246)';
+            else if (n.isTarget) color = 'rgb(59, 130, 246)'; // Failsafe for Target
             else if (n.owner === 1) color = 'rgb(255, 0, 85)';
             else if (n.owner === 2) color = 'rgb(59, 130, 246)';
             else if (n.chainLit) color = 'rgb(0, 255, 157)';

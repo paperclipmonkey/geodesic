@@ -1,5 +1,5 @@
-import { Dome } from './dome.js';
-import { Renderer } from './renderer.js';
+import { Dome } from './dome.js?v=8';
+import { Renderer } from './renderer.js?v=8';
 import { SerialLEDs } from './hardware/serial_leds.js';
 import { GameEngine } from './game_engine.js';
 import { ParticleSystem } from './particle_system.js';
@@ -40,7 +40,7 @@ async function init() {
 
     const canvas = document.getElementById('canvas');
     const dome = new Dome();
-    const particleSystem = new ParticleSystem();
+    const particleSystem = new ParticleSystem(dome);
     const renderer = new Renderer(canvas, dome, particleSystem);
     const hardware = new SerialLEDs();
 

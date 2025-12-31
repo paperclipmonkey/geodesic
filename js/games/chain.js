@@ -43,6 +43,10 @@ export class ChainGame {
             n.capturedBy = null;
             n.owner = null;
         });
+        this.dome.edges.forEach(e => {
+            e.capturedBy = null;
+            if (e.pixelData) e.pixelData.fill(0);
+        });
     }
 
     resetRound() {
@@ -98,6 +102,7 @@ export class ChainGame {
                 // Ensure it's always visible (0.2 to 1.0)
                 n.pulseIntensity = 0.2 + 0.8 * Math.sin(Date.now() / blinkSpeed);
                 n.isTarget = true; // Force logic
+                n.capturedBy = 2; // Force Blue Color
             }
 
             if (this.timerRunning && this.timeRemaining <= 0) {
@@ -109,6 +114,17 @@ export class ChainGame {
         this.dome.nodes.forEach(n => {
             if (n.id !== this.targetHub && n.pulseIntensity > 0) {
                 n.pulseIntensity *= 0.92;
+            }
+        });
+
+        // Fade LED trails on struts
+        this.dome.edges.forEach(e => {
+            if (e.pixelData) {
+                for (let i = 0; i < e.pixelData.length; i++) {
+                    if (e.pixelData[i] > 0) {
+                        e.pixelData[i] = Math.floor(e.pixelData[i] * 0.80);
+                    }
+                }
             }
         });
 
@@ -247,7 +263,9 @@ export class ChainGame {
         }
 
         this.targetHub = selectedNode.id;
-        this.dome.nodes[this.targetHub].isTarget = true;
+        const targetNode = this.dome.nodes[this.targetHub];
+        targetNode.isTarget = true;
+        targetNode.capturedBy = 2; // Blue Target
     }
 
     getDist(a, b) {
@@ -277,6 +295,11 @@ export class ChainGame {
                 n.isTarget = false;
                 n.chainLit = false;
                 n.capturedBy = 1; // Red
+            });
+            // Flash Edges too
+            this.dome.edges.forEach(e => {
+                e.capturedBy = 1;
+                if (e.pixelData) e.pixelData.fill(0); // Clear LED trails
             });
 
             // Pulse loop
