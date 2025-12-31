@@ -135,8 +135,7 @@ export class PulseWarsGame {
         this.charges[team]++;
 
         if (this.soundManager) {
-            const freq = 200 + this.charges[team] * 100;
-            this.soundManager.playTone(freq, 'triangle', 0.1, 0.2);
+            this.soundManager.playPulseCharge(team, this.charges[team]);
         }
 
         // Visuals
@@ -161,7 +160,7 @@ export class PulseWarsGame {
             // Capture next node
             this.charges[team] = 0;
 
-            if (this.soundManager) this.soundManager.playSound('ping');
+            if (this.soundManager) this.soundManager.playPulseCapture(team);
 
             // Advance Index
             if (team === 1) this.redIndex = nextIndex;
@@ -226,6 +225,12 @@ export class PulseWarsGame {
 
     gameOver(team) {
         this.winTeam = team;
+        if (this.soundManager) this.soundManager.playPulseCapture(team); // Victory Chord based on team? Or generic? 
+        // Let's use generic success for Win, but maybe slightly adapted. 
+        // Actually user asked for "noises for their button presses and node activations". Win sound changes wasn't explicitly asked but fits.
+        // I'll stick to generic success for game over, or just re-use the Capture chord effectively.
+        // Re-reading request: "noise generated for each different node touched" (which is charge/capture).
+        // I will keep generic SUCCESS for GAME OVER, but ensure the "node activation" uses the team sound.
         if (this.soundManager) this.soundManager.playSound('success');
         const winnerName = team === 1 ? "RED" : "BLUE";
         const color = team === 1 ? '#ff0055' : '#3b82f6';

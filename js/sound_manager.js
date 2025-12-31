@@ -145,4 +145,25 @@ export class SoundManager {
         osc.start(t);
         osc.stop(t + 0.3);
     }
+
+    // Pulse Wars
+    playPulseCharge(team, level) {
+        // level 1 to 5
+        const baseFreq = team === 1 ? 220 : 400; // Raised Red base slightly
+        const freq = baseFreq + level * 50;
+        const type = 'triangle'; // Use triangle for both (red was square)
+        const dur = 0.1;
+
+        this.playTone(freq, type, dur, 0.3);
+    }
+
+    playPulseCapture(team) {
+        if (team === 1) {
+            // Red Capture: A Minor Chord (Softer but distinct from Blue Major)
+            this.playChord([220, 261, 329], 'triangle', 0.4);
+        } else {
+            // Blue Capture: Bright High Chord
+            this.playChord([440, 554, 659], 'sine', 0.4);
+        }
+    }
 }
