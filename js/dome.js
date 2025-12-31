@@ -15,12 +15,15 @@ export class Dome {
     this.adj = []; // Adjacency list for graph traversal
 
     // Config
-    this.ledsPerEdge = LEDS_PER_EDGE;
+    this.ledsPerEdge = LEDS_PER_EDGE; // Default/Fallback
+    this.radius = 2.5; // Meters
+    this.ledSpacing = 0.02; // Meters (20mm)
 
     this.build();
+    this.assignOwnership();
   }
 
-  // Vector Math Helpers
+  // ... (Vector Math Helpers remain the same) ...
   vecAdd(a, b) { return [a[0] + b[0], a[1] + b[1], a[2] + b[2]]; }
   vecScale(a, s) { return [a[0] * s, a[1] * s, a[2] * s]; }
   vecLen(a) { return Math.hypot(a[0], a[1], a[2]); }
@@ -29,6 +32,7 @@ export class Dome {
     return [a[0] / l, a[1] / l, a[2] / l];
   }
   midpoint(a, b) { return this.vecScale(this.vecAdd(a, b), 0.5); }
+  dist(a, b) { return this.vecLen([a[0] - b[0], a[1] - b[1], a[2] - b[2]]); }
 
   quant(v) { return v.map(x => x.toFixed(5)).join(","); }
 
@@ -53,7 +57,10 @@ export class Dome {
         capturedBy: null, // 1=Red, 2=Blue
         chargeTeam: null,
         ringCharge: 0,    // 0 to 12
-        color: null       // Custom color override
+        color: null,      // Custom color override
+
+        // RS485 Control
+        drivenEdges: []   // List of edge indices this node controls
       };
       this.nodes.push(node);
       this.vertMap.set(key, id);
@@ -71,15 +78,27 @@ export class Dome {
     );
     if (exists) return;
 
+    // Calculate Physical Properties
+    const nA = this.nodes[aLine];
+    const nB = this.nodes[bLine];
+    const lenUnits = this.dist(nA.p3, nB.p3); // Length in unit sphere
+    const lenMeters = lenUnits * this.radius;
+    const count = Math.floor(lenMeters / this.ledSpacing);
+
     this.edges.push({
       a: aLine,
       b: bLine,
-      leds: new Uint8Array(this.ledsPerEdge).fill(0), // Brightness/Color packed? simplified to brightness for now or index
-      // For simulation, we might store color per LED later. 
-      // For now, let's keep the existing logic: edges light up as a whole or gradients.
-      pixelData: new Float32Array(this.ledsPerEdge * 3), // RGB per pixel
-      color: null,         // Custom color override for the whole edge
-      intensity: 0         // For "breathing" effect or manual intensity
+      length: lenMeters,
+      leds: new Uint8Array(count).fill(0),
+      pixelData: new Float32Array(count * 3), // RGB per pixel
+      ledCount: count,
+      color: null,
+      intensity: 0,
+
+      // RS485 Properties
+      driverId: null,      // Node ID driving this strut
+      chargeSource: null,  // Start node for animation direction
+      chargeRatio: 0
     });
 
     // Update Adjacency
@@ -87,6 +106,37 @@ export class Dome {
     if (!this.adj[bLine]) this.adj[bLine] = [];
     this.adj[aLine].push(bLine);
     this.adj[bLine].push(aLine);
+  }
+
+  assignOwnership() {
+    // Simple greedy assignment for RS485 simulation
+    // Each node can drive up to 6 struts (typical hub max)
+
+    const MAX_PORT = 6;
+
+    this.edges.forEach((edge, edgeIdx) => {
+      const nA = this.nodes[edge.a];
+      const nB = this.nodes[edge.b];
+
+      // Try to assign to A
+      if (nA.drivenEdges.length < MAX_PORT) {
+        nA.drivenEdges.push(edgeIdx);
+        edge.driverId = edge.a;
+      }
+      // Else assign to B
+      else if (nB.drivenEdges.length < MAX_PORT) {
+        nB.drivenEdges.push(edgeIdx);
+        edge.driverId = edge.b;
+      }
+      // Assignment failure (shouldn't happen in standard 2V)
+      else {
+        console.warn(`Edge ${edgeIdx} could not be assigned a driver!`);
+      }
+    });
+
+    console.log("Ownership Assigned. Nodes driving edges:",
+      this.nodes.map(n => `${n.id}:${n.drivenEdges.length}`).join(", ")
+    );
   }
 
   build() {

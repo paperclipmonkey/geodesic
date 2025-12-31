@@ -32,7 +32,7 @@ export class Renderer {
         this.canvas.addEventListener('wheel', e => {
             e.preventDefault();
             this.zoom += e.deltaY * -0.002;
-            this.zoom = Math.min(Math.max(0.5, this.zoom), 3.0);
+            this.zoom = Math.min(Math.max(0.5, this.zoom), 10.0);
         }, { passive: false });
 
         this.canvas.addEventListener('mousedown', e => {
@@ -145,84 +145,176 @@ export class Renderer {
             n.scale = p.scale;
         }
 
-        // Draw Edges
-        this.ctx.lineWidth = 3.0; // Increased base width for visibility
+        // Draw Edges (Discrete LEDs)
+        // We draw individual dots for each LED on the strut
+
         for (const e of this.dome.edges) {
             const nA = this.dome.nodes[e.a];
             const nB = this.dome.nodes[e.b];
 
-            // Calculate Edge Style
-            let edgeColor = e.color;
-            let edgeOpacity = 0.6; // Increased base opacity
-            let lineWidth = 3.0;   // Thicker default
+            // Safety check for projection
+            if (nA.sx === undefined || nB.sx === undefined) continue;
 
-            // Gradient stroke
-            const grad = this.ctx.createLinearGradient(nA.sx, nA.sy, nB.sx, nB.sy);
+            // Check if we have pixel data initialized
+            if (!e.pixelData || e.pixelData.length === 0) continue;
 
-            // Check for custom edge color
-            if (e.color) {
-                edgeColor = e.color;
-                edgeOpacity = (e.intensity !== undefined) ? e.intensity : 1.0;
-                lineWidth = 4.0; // Even thicker for active
+            // If the edge has a solid color override or intensity, we might want to fill the pixels
+            // conceptually if the game logic hasn't updated them yet.
+            // But ideally, the game logic updates pixelData.
+            // For backward compatibility (breathing/manual), we can "fake" a fill here if pixelData is black
+            // but edge.color or intensity is set.
+
+            let useFallback = true;
+            for (let i = 0; i < e.pixelData.length; i++) {
+                if (e.pixelData[i] > 0) { useFallback = false; break; }
             }
 
-            // Check for charged strut (Edge property)
-            if (e.chargeRatio > 0 && e.chargeColor) {
-                // Fill from A to B (or B to A? We need direction)
-                // Assuming 'chargeFrom' is set on edge to know direction, or just generic fill
-                // For simplified visuals, let's assume A->B fill for now or gradients
-                // Actually, gradients are absolute. 
-                // If we want to animate "filling", we need to know which node is "source".
-                // Let's assume the game sets 'chargeSource' on the edge to 'nA' or 'nB' ID.
+            const ledCount = e.ledCount;
+            const stepX = (nB.sx - nA.sx) / (ledCount + 1);
+            const stepY = (nB.sy - nA.sy) / (ledCount + 1);
 
-                const isFromA = e.chargeSource === nA.id;
-                const ratio = isFromA ? e.chargeRatio : (1 - e.chargeRatio);
+            // DYNAMIC SIZING: Ensure distinct dots by scaling radius to the gap distance
+            const pixelStep = Math.hypot(stepX, stepY);
 
-                // Base color
-                const cA = this.getNodeColor(nA, 0.4);
-                const cB = this.getNodeColor(nB, 0.4);
+            // INCREASED SIZE: Use 40% of the step as radius (80% diameter), leaving only 20% gap
+            // Minimum size upped with zoom factor
+            const dotRadius = Math.max(1.5, pixelStep * 0.4);
 
-                if (isFromA) {
-                    grad.addColorStop(0, e.chargeColor);
-                    grad.addColorStop(ratio, e.chargeColor);
-                    grad.addColorStop(ratio + 0.01, cB); // Hard transition
-                    grad.addColorStop(1, cB);
-                } else {
-                    grad.addColorStop(0, cA);
-                    grad.addColorStop(ratio - 0.01, cA);
-                    grad.addColorStop(ratio, e.chargeColor);
-                    grad.addColorStop(1, e.chargeColor);
-                }
-
-                this.ctx.lineWidth = 5; // Thicker for active strut
-                this.ctx.shadowBlur = 10;
-                this.ctx.shadowColor = e.chargeColor;
-
-            } else {
-                if (e.color) {
-                    grad.addColorStop(0, edgeColor);
-                    grad.addColorStop(1, edgeColor);
-                } else {
-                    grad.addColorStop(0, this.getNodeColor(nA, edgeOpacity));
-                    grad.addColorStop(1, this.getNodeColor(nB, edgeOpacity));
-                }
-                this.ctx.lineWidth = lineWidth;
-                this.ctx.shadowBlur = 0;
+            if (!window.rendererRadiusDebug) {
+                console.log("Renderer Radius Debug:", {
+                    pixelStep: pixelStep,
+                    dotRadius: dotRadius,
+                    zoom: this.zoom,
+                    sampleStepX: stepX
+                });
+                window.rendererRadiusDebug = true;
             }
 
-            this.ctx.globalAlpha = edgeOpacity;
-            this.ctx.strokeStyle = grad;
-            this.ctx.beginPath();
-            this.ctx.moveTo(nA.sx, nA.sy);
-            this.ctx.lineTo(nB.sx, nB.sy);
-            this.ctx.stroke();
-            this.ctx.globalAlpha = 1.0;
             this.ctx.shadowBlur = 0;
+
+            for (let i = 0; i < ledCount; i++) {
+                // Calculate position (screen space)
+                // i=0 is first LED after nA
+                const px = nA.sx + stepX * (i + 1);
+                const py = nA.sy + stepY * (i + 1);
+
+                let r, g, b;
+
+                if (useFallback) {
+                    // Start with base state
+                    let active = false;
+                    let cR = 0, cG = 0, cB = 0;
+
+                    // 1. Check for Charge (Pulse Wars / Filling effect)
+                    if (e.chargeRatio > 0 && e.chargeColor) {
+                        // Determine if this specific LED pixel is within the "filled" portion
+                        const isFromA = e.chargeSource === nA.id;
+                        const pct = i / ledCount; // 0.0 to 1.0 (approx)
+
+                        // Check threshold
+                        if (isFromA) {
+                            if (pct < e.chargeRatio) active = true;
+                        } else {
+                            if (pct > (1 - e.chargeRatio)) active = true;
+                        }
+                        // active flag will trigger color selection below
+                    }
+
+                    // 2. Check for Intensity / Solid Color
+                    const opacity = e.intensity !== undefined ? e.intensity : 0.6;
+
+                    if (active) {
+                        // It is charged. 
+                        // Force r,g,b to 255 to pass "isOff" check
+                        r = 255; g = 255; b = 255;
+                    } else {
+                        // Base state
+                        // Use a simple white * intensity
+                        const val = Math.floor(255 * opacity);
+
+                        if (e.color) {
+                            // If edge has a static color (e.g. captured)
+                            r = 255; g = 255; b = 255; // Placeholder
+                        } else {
+                            r = val; g = val; b = val;
+                        }
+                    }
+                } else {
+                    // Use Pixel Data
+                    const pIdx = i * 3;
+                    r = e.pixelData[pIdx];
+                    g = e.pixelData[pIdx + 1];
+                    b = e.pixelData[pIdx + 2];
+                }
+
+                // --- MODIFIED DRAWING LOGIC TO HANDLE FALLBACK STRINGS ---
+
+                let isOff = false;
+                if (!useFallback) {
+                    if (r < 10 && g < 10 && b < 10) isOff = true;
+                } else {
+                    // Re-calculate isOff for fallback logic
+                    const opacity = e.intensity !== undefined ? e.intensity : 0;
+                    // Checking active state again is redundant but safe
+                    // We simplified above by setting r,g,b=255 if active
+                    if (r < 10 && !e.color) isOff = true;
+                }
+
+                if (isOff) {
+                    // Draw faint dot for structural visibility
+                    // VISIBILITY BOOST: Higher opacity and lighter grey
+                    this.ctx.fillStyle = 'rgba(120, 120, 130, 0.8)';
+                    this.ctx.beginPath();
+                    this.ctx.arc(px, py, dotRadius, 0, Math.PI * 2);
+                    this.ctx.fill();
+                    continue;
+                }
+
+                // Determine Fill Style
+                if (useFallback) {
+                    // Prioritize Charge -> Edge Color -> White
+                    const opacity = e.intensity !== undefined ? e.intensity : 0.6;
+                    let finalColor = `rgba(255,255,255,${opacity})`;
+
+                    const hasCharge = (e.chargeRatio > 0 && e.chargeColor);
+                    let pixelActive = false;
+                    if (hasCharge) {
+                        const isFromA = e.chargeSource === nA.id;
+                        const pct = i / ledCount;
+                        if (isFromA && pct < e.chargeRatio) pixelActive = true;
+                        else if (!isFromA && pct > (1 - e.chargeRatio)) pixelActive = true;
+                    }
+
+                    if (pixelActive) finalColor = e.chargeColor;
+                    else if (e.color) finalColor = e.color; // TODO: handle alpha?
+
+                    this.ctx.fillStyle = finalColor;
+                } else {
+                    this.ctx.fillStyle = `rgb(${Math.floor(r)}, ${Math.floor(g)}, ${Math.floor(b)})`;
+                }
+
+                // Glow?
+                // If using fallback with charge, always glow
+                if (useFallback && (e.chargeRatio > 0 || e.color)) {
+                    this.ctx.shadowBlur = 5;
+                    this.ctx.shadowColor = this.ctx.fillStyle;
+                } else if (r > 100 || g > 100 || b > 100) {
+                    this.ctx.shadowBlur = 4;
+                    this.ctx.shadowColor = this.ctx.fillStyle;
+                } else {
+                    this.ctx.shadowBlur = 0;
+                }
+
+                this.ctx.beginPath();
+                this.ctx.arc(px, py, dotRadius * 1.5, 0, Math.PI * 2);
+                this.ctx.fill();
+            }
         }
 
         // Draw Nodes
         for (const n of this.dome.nodes) {
-            const radius = 6 * (n.scale / 100);
+            // Reduced size by 40% (from 6 to 3.6 base) to reflect physical hubs better
+            const radius = 3.6 * (n.scale / 100);
 
             // Glow
             if (n.pulseIntensity > 0 || n.capturedBy || n.owner || n.isTarget) {
@@ -234,7 +326,7 @@ export class Renderer {
 
             this.ctx.fillStyle = this.getNodeColor(n, 1);
             this.ctx.beginPath();
-            this.ctx.arc(n.sx, n.sy, Math.max(2, radius), 0, Math.PI * 2);
+            this.ctx.arc(n.sx, n.sy, Math.max(1.5, radius), 0, Math.PI * 2);
             this.ctx.fill();
             this.ctx.shadowBlur = 0;
 
