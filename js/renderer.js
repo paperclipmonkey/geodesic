@@ -251,13 +251,20 @@ export class Renderer {
 
                 let isOff = false;
                 if (!useFallback) {
-                    if (r < 10 && g < 10 && b < 10) isOff = true;
+                    if (r === 0 && g === 0 && b === 0) isOff = true;
                 } else {
                     // Re-calculate isOff for fallback logic
                     const opacity = e.intensity !== undefined ? e.intensity : 0;
-                    // Checking active state again is redundant but safe
-                    // We simplified above by setting r,g,b=255 if active
-                    if (r < 10 && !e.color) isOff = true;
+
+                    // New IS OFF Check:
+                    // If intensity is 0 and no charge, it's off.
+                    // If color is set, but intensity is 0, it should be off.
+                    if (opacity <= 0.01 && !e.chargeRatio) {
+                        isOff = true;
+                    } else if (r === 0 && !e.color && !e.chargeRatio) {
+                        // Double check standard case
+                        isOff = true;
+                    }
                 }
 
                 if (isOff) {
@@ -285,8 +292,20 @@ export class Renderer {
                         else if (!isFromA && pct > (1 - e.chargeRatio)) pixelActive = true;
                     }
 
-                    if (pixelActive) finalColor = e.chargeColor;
-                    else if (e.color) finalColor = e.color; // TODO: handle alpha?
+                    if (pixelActive) {
+                        finalColor = e.chargeColor;
+                    } else if (e.color) {
+                        // Inject Opacity if RGB
+                        if (e.color.startsWith('rgb(')) {
+                            finalColor = e.color.replace('rgb', 'rgba').replace(')', `, ${opacity})`);
+                        } else if (e.color.startsWith('#')) {
+                            // Simple Hex to RGBA conversion if needed, or just use as is (opaque)
+                            // Assuming mainly RGB usage from games
+                            finalColor = e.color;
+                        } else {
+                            finalColor = e.color;
+                        }
+                    }
 
                     this.ctx.fillStyle = finalColor;
                 } else {

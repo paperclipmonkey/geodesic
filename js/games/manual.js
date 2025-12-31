@@ -42,22 +42,23 @@ export class ManualGame {
         }
 
         // Apply Intensity Scaling
-        r = Math.floor(r * this.intensity);
-        g = Math.floor(g * this.intensity);
-        b = Math.floor(b * this.intensity);
+        // Apply Intensity Scaling for Hardware / Pixel Data
+        const hr = Math.floor(r * this.intensity);
+        const hg = Math.floor(g * this.intensity);
+        const hb = Math.floor(b * this.intensity);
 
-        const fillStr = `rgb(${r},${g},${b})`;
+        const fillStr = `rgb(${r},${g},${b})`; // Unscaled for visual props
 
         this.dome.nodes.forEach(n => {
-            n.color = fillStr; // Keep for fallback?
-            n.pulseIntensity = this.intensity;
+            n.color = fillStr;
+            n.pulseIntensity = this.intensity; // Renderer applies this to n.color
 
-            // Write to Hardware LEDs
+            // Write to Hardware LEDs (Must be pre-scaled)
             if (n.leds) {
                 for (let i = 0; i < n.leds.length; i += 3) {
-                    n.leds[i] = r;
-                    n.leds[i + 1] = g;
-                    n.leds[i + 2] = b;
+                    n.leds[i] = hr;
+                    n.leds[i + 1] = hg;
+                    n.leds[i + 2] = hb;
                 }
             }
         });
@@ -66,12 +67,12 @@ export class ManualGame {
             e.color = fillStr;
             e.intensity = this.intensity;
 
-            // Write to Hardware LEDs
+            // Write to Hardware LEDs (Must be pre-scaled)
             if (e.pixelData) {
                 for (let i = 0; i < e.pixelData.length; i += 3) {
-                    e.pixelData[i] = r;
-                    e.pixelData[i + 1] = g;
-                    e.pixelData[i + 2] = b;
+                    e.pixelData[i] = hr;
+                    e.pixelData[i + 1] = hg;
+                    e.pixelData[i + 2] = hb;
                 }
             }
         });
