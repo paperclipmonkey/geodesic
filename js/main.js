@@ -1,5 +1,5 @@
-import { Dome } from './dome.js?v=8';
-import { Renderer } from './renderer.js?v=8';
+import { Dome } from './dome.js?v=9';
+import { Renderer } from './renderer.js?v=9';
 import { SerialLEDs } from './hardware/serial_leds.js';
 import { GameEngine } from './game_engine.js';
 import { ParticleSystem } from './particle_system.js';
