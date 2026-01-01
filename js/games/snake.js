@@ -29,6 +29,7 @@ export class SnakeGame {
         // Config
         this.baseColor = { r: 0, g: 255, b: 157 };
         this.flashColor = { r: 255, g: 0, b: 0 };
+        this.managesPixelData = true; // High fidelity rendering
     }
 
     start() {

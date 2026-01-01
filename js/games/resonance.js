@@ -7,6 +7,7 @@ export class ResonanceGame {
         this.active = false;
         this.waves = [];
         this.score = 0;
+        this.managesPixelData = true; // High fidelity
     }
 
     start() {

@@ -17,6 +17,7 @@
 // Protocol Constants
 #define PROTOCOL_STX 0x02
 #define PROTOCOL_ETX 0x03
+#define PROTOCOL_ESC 0x1B
 #define BROADCAST_ID 0
 
 // Message Types
@@ -74,6 +75,7 @@ private:
   uint8_t _rxBuffer[32];
   uint8_t _rxIndex;
   bool _receiving;
+  bool _escaped;
 
   // Helpers
   void sendPacket(const PacketPayload &pkt);

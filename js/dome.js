@@ -115,7 +115,8 @@ export class Dome {
     // Simple greedy assignment for RS485 simulation
     // Each node can drive up to 6 struts (typical hub max)
 
-    const MAX_PORT = 6;
+    // Limit to 3 struts per hub as per hardware/firmware specs
+    const MAX_PORT = 3;
 
     this.edges.forEach((edge, edgeIdx) => {
       const nA = this.nodes[edge.a];

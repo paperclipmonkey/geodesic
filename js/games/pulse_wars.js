@@ -17,8 +17,10 @@ export class PulseWarsGame {
         this.blueStart = 0;
 
         // Charge State { 'red': 0, 'blue': 0 } (0 to 5)
+        // Charge State { 'red': 0, 'blue': 0 } (0 to 5)
         this.charges = { 1: 0, 2: 0 };
         this.winTeam = 0;
+        this.managesPixelData = true;
     }
 
     start() {

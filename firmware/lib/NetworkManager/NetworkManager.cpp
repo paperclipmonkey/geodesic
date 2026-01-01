@@ -1,7 +1,8 @@
 #include "NetworkManager.h"
 
 NetworkManager::NetworkManager()
-    : _myNodeId(0), _userOnMessage(nullptr), _rxIndex(0), _receiving(false) {
+    : _myNodeId(0), _userOnMessage(nullptr), _rxIndex(0), _receiving(false),
+      _escaped(false) {
   _rs485 = &Serial2;
 }
 
@@ -23,9 +24,28 @@ void NetworkManager::update() {
   while (_rs485->available()) {
     uint8_t b = _rs485->read();
 
+    if (_escaped) {
+      if (_receiving) {
+        if (_rxIndex < sizeof(_rxBuffer)) {
+          _rxBuffer[_rxIndex++] = b;
+        } else {
+          _receiving = false;
+          _rxIndex = 0;
+        }
+      }
+      _escaped = false;
+      continue;
+    }
+
+    if (b == PROTOCOL_ESC) {
+      _escaped = true;
+      continue;
+    }
+
     if (b == PROTOCOL_STX) {
       _receiving = true;
       _rxIndex = 0;
+      _escaped = false;
       continue; // Don't store STX
     }
 
@@ -109,7 +129,17 @@ void NetworkManager::sendPacket(const PacketPayload &pkt) {
   delayMicroseconds(50); // Driver stabilization
 
   _rs485->write(PROTOCOL_STX);
-  _rs485->write(buffer, len + 2);
+
+  // Send buffer with Escaping
+  // Buffer size is len+2 (LEN, PAYLOAD..., CRC)
+  for (uint8_t i = 0; i < len + 2; i++) {
+    uint8_t b = buffer[i];
+    if (b == PROTOCOL_STX || b == PROTOCOL_ETX || b == PROTOCOL_ESC) {
+      _rs485->write(PROTOCOL_ESC);
+    }
+    _rs485->write(b);
+  }
+
   _rs485->write(PROTOCOL_ETX);
   _rs485->flush(); // Wait for TX complete
 

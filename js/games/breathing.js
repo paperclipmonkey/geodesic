@@ -7,7 +7,9 @@ export class BreathingGame {
         this.active = false;
         this.time = 0;
         this.color = 'rgb(255, 255, 255)';
+        this.color = 'rgb(255, 255, 255)';
         this.speed = 1.0;
+        this.managesPixelData = true;
     }
 
     start() {

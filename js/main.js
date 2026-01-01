@@ -43,10 +43,28 @@ async function init() {
     const dome = new Dome();
     const particleSystem = new ParticleSystem(dome);
     const renderer = new Renderer(canvas, dome, particleSystem);
-    const hardware = new SerialLEDs();
+
+    // --- Hardware Simulation Setup ---
+    console.log("Initializing Virtual Hardware...");
+
+    const { VirtualBus } = await import('./hardware/virtual_bus.js');
+    const { VirtualNode } = await import('./hardware/virtual_node.js');
+    const { NetworkManager } = await import('./hardware/network_manager.js');
+
+    const bus = new VirtualBus();
+    const networkManager = new NetworkManager(bus);
+
+    // Create Virtual Nodes for every Dome Node
+    dome.nodes.forEach(node => {
+        const vNode = new VirtualNode(node.id, bus);
+        bus.registerNode(vNode);
+        node.virtualNode = vNode; // Link for visualization debug/magic if needed
+    });
+
     const soundManager = new SoundManager();
 
-    const engine = new GameEngine(dome, renderer, hardware, UI, particleSystem, soundManager);
+    // GameEngine now uses NetworkManager
+    const engine = new GameEngine(dome, renderer, networkManager, UI, particleSystem, soundManager);
 
     // Resume Audio Context on first interaction
     const unlockAudio = () => {
@@ -108,23 +126,40 @@ async function init() {
     const connectBtn = document.getElementById('btn-connect');
     const statusDot = document.querySelector('.status-dot');
 
+    // Virtual Bus is always connected
+    UI.showNotification("Virtual Bus Active", "success");
+    statusDot.classList.add('connected');
+    connectBtn.style.display = 'none'; // Hide connect button for virtual mode
+
+    /*
+    connectBtn.addEventListener('click', async () => {
+        if (!hardware.isConnected) {
+    */
+    // Virtual Mode is always "connected" in this new paradigm
+    // But we can simulate "Connecting to Real RS485" vs "Simulation" later.
+    // For now, let's just say we are connected.
+    UI.showNotification("Virtual Bus Active", "success");
+    statusDot.classList.add('connected');
+    /*
+        const success = await hardware.connect();
+        if (success) {
+            connectBtn.textContent = "DISCONNECT HARDWARE";
+            connectBtn.classList.replace('btn-primary', 'btn-danger');
+            statusDot.classList.add('connected');
+            UI.showNotification("Hardware Connected", "success");
+        }
+    */
+    /*
     connectBtn.addEventListener('click', async () => {
         if (!hardware.isConnected) {
             const success = await hardware.connect();
-            if (success) {
-                connectBtn.textContent = "DISCONNECT HARDWARE";
-                connectBtn.classList.replace('btn-primary', 'btn-danger');
-                statusDot.classList.add('connected');
-                UI.showNotification("Hardware Connected", "success");
-            }
+            // ...
         } else {
             await hardware.disconnect();
-            connectBtn.textContent = "CONNECT RS485";
-            connectBtn.classList.replace('btn-danger', 'btn-primary');
-            statusDot.classList.remove('connected');
-            UI.showNotification("Hardware Disconnected", "info");
+            // ...
         }
     });
+    */
 
     const toggleBtn = document.getElementById('toggle-rotate');
     // Set initial state
