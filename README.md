@@ -1,4 +1,4 @@
-# Geodesic Dome OS v2.0
+# Geodesic Dome games
 
 A modular interactive geodesic dome visualization, game engine, and hardware controller.
 
@@ -13,7 +13,6 @@ This project simulates a 2V Geodesic Dome with LED-lit hubs. It is designed to a
 - **Interactive 3D Simulation**: Drag, zoom, and interact with the dome on screen.
 - **Modular Game Engine**: Flexible architecture to add new light games easily.
 - **Hardware Integration**: Built-in WebSerial driver to control physical LED hubs via RS485.
-- **Premium Dashboard**: A dark-mode, touch-friendly interface for field operators.
 
 ### Game Modes
 
@@ -23,7 +22,7 @@ This project simulates a 2V Geodesic Dome with LED-lit hubs. It is designed to a
 
 ## Technical Architecture
 
-The project is structured as a modular ES6 application:
+The project is structured as a modular application:
 
 ```
 /
@@ -44,9 +43,9 @@ The project is structured as a modular ES6 application:
 ## Physical Dome Setup
 
 ### Hardware Requirements
-- **Hubs**: Custom LED hubs (e.g., ESP32 or RS485-addr nodes).
+- **Hubs**: Custom LED hubs (e.g., ESP RS485-addr nodes).
 - **Communication**: USB-to-RS485 adapter connected to the host computer.
-- **Topology**: Daemon chain or star topology depending on RS485 termination.
+- **Topology**: Daemon chain topology RS485 termination.
 
 ### WebSerial Protocol
 The `SerialLEDs` module sends binary frames to the RS485 bus.
